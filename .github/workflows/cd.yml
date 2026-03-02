@@ -1,0 +1,41 @@
+name: Release CD
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv\Scripts\Activate.ps1
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build Executable
+        run: |
+          .venv\Scripts\Activate.ps1
+          # 我们把 web_app 打包成一个单文件的直接可执行程序
+          pyinstaller --noconfirm --onefile --windowed --add-data "README.md;." web_app.py
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/web_app.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
