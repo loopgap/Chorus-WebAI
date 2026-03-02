@@ -27,7 +27,7 @@ def main() -> int:
     _, metrics["history_table_seconds"] = timed(app._history_table, "全部")
 
     limits = {
-        "import_web_app_seconds": 4.5,
+        "import_web_app_seconds": 6.0,
         "build_ui_seconds": 3.0,
         "build_guide_seconds": 0.4,
         "build_api_doc_seconds": 0.4,

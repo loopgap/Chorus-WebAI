@@ -98,10 +98,14 @@ EXAMPLE_INPUTS: List[List[str]] = [
 HISTORY_FILTERS = ["全部", "仅成功", "仅失败"]
 
 CUSTOM_CSS = """
-:root { color-scheme: light dark; }
+:root { color-scheme: light; }
 footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: none !important; }
 
 .gradio-container {
+  --app-surface: #ffffff;
+  --app-surface-muted: #f5f7fb;
+  --app-text: #111827;
+  --app-border: #dbe2ee;
   --body-background-fill: #f5f7fb;
   --block-background-fill: #ffffff;
   --block-border-color: #dbe2ee;
@@ -149,9 +153,9 @@ footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: no
 }
 
 .section-card {
-  border: 1px solid #e6ebf2;
+  border: 1px solid var(--app-border);
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--app-surface);
   box-shadow: 0 4px 14px rgba(60,64,67,0.07);
   padding: 14px;
   margin-top: 8px;
@@ -299,6 +303,16 @@ footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: no
 }
 
 /* History table readability in light mode */
+#history-table,
+#history-table > div,
+#history-table .table-container,
+#history-table [data-testid='dataframe'],
+#history-table [data-testid='dataframe'] * {
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+  border-color: var(--app-border) !important;
+}
+
 #history-table table,
 #history-table thead,
 #history-table tbody,
@@ -324,8 +338,14 @@ footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: no
 #history-table [role='row'],
 #history-table [role='gridcell'],
 #history-table [role='columnheader'] {
-  background: #ffffff !important;
-  color: #111827 !important;
+  background: var(--app-surface) !important;
+  color: var(--app-text) !important;
+}
+
+#history-table td *,
+#history-table th * {
+  color: var(--app-text) !important;
+  background: transparent !important;
 }
 
 #history-filter,
@@ -339,7 +359,12 @@ footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: no
 }
 
 @media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
   .gradio-container {
+    --app-surface: #111827;
+    --app-surface-muted: #0b1220;
+    --app-text: #e5e7eb;
+    --app-border: #334155;
     --body-background-fill: #0f172a;
     --block-background-fill: #111827;
     --body-text-color: #e5e7eb;
@@ -427,6 +452,12 @@ footer, #footer, .gradio-container .footer, [data-testid='footer'] { display: no
     background: #0b1220 !important;
     color: #e5e7eb !important;
     border-color: #334155 !important;
+  }
+
+  #history-table td *,
+  #history-table th * {
+    color: #e5e7eb !important;
+    background: transparent !important;
   }
 
   #history-filter,
