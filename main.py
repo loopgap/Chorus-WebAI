@@ -18,9 +18,18 @@ import asyncio
 import time
 import traceback
 import os
+import httpx
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, AsyncGenerator
+
+# 针对 Python 性能的优化：在非 Windows 环境下尝试使用 uvloop
+if sys.platform != "win32":
+    try:
+        import uvloop
+        asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    except ImportError:
+        pass
 
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright, Page, Locator, BrowserContext, Playwright
@@ -306,20 +315,26 @@ async def wait_for_response(
     while time.time() - start < timeout_seconds:
         try:
             current = await get_latest_response_text(page, selectors)
-        except Exception:
+        except Exception as e:
+            # 记录异常但不中断，等待下一次尝试
+            print(f"Warning during stream read: {e}")
             current = ""
 
         if current and current != last:
             last = current
             last_change = time.time()
             yield last
+        elif not current and not last:
+            # 初始阶段未获取到内容，不更新计时器
+            pass
 
         if last and (time.time() - last_change) >= stable_seconds:
+            # 内容已稳定超过预设时间，认为输出完毕
             return
 
         await asyncio.sleep(1)
 
-    raise TimeoutError(f"Timed out after {timeout_seconds}s while waiting for response.")
+    raise TimeoutError(f"Timed out after {timeout_seconds}s while waiting for response. Current length: {len(last)}")
 
 
 async def open_chat_page(config: Dict[str, Any]) -> tuple[Playwright, BrowserContext, Page]:
@@ -339,18 +354,30 @@ async def open_chat_page(config: Dict[str, Any]) -> tuple[Playwright, BrowserCon
             context = await p.chromium.launch_persistent_context(**launch_kwargs)
     except Exception as e:
         print(f"Warning: Failed to launch with channel '{preferred_channel}': {e}. Falling back to default chromium.")
-        context = await p.chromium.launch_persistent_context(**launch_kwargs)
+        try:
+            context = await p.chromium.launch_persistent_context(**launch_kwargs)
+        except Exception as inner_e:
+            await p.stop()
+            raise RuntimeError(f"Critical: Browser failed to launch: {inner_e}") from inner_e
         
-    page = context.pages[0] if context.pages else await context.new_page()
+    if not context.pages:
+        await context.new_page()
+    page = context.pages[0]
     
-    # 设置较短的默认超时
+    # 设置合理的超时限制
     page.set_default_timeout(30000)
+    page.set_default_navigation_timeout(60000)
     
-    await page.goto(
-        config["target_url"],
-        wait_until="domcontentloaded",
-        timeout=int(config.get("navigation_timeout_seconds", 30)) * 1000,
-    )
+    try:
+        await page.goto(
+            config["target_url"],
+            wait_until="domcontentloaded",
+            timeout=int(config.get("navigation_timeout_seconds", 30)) * 1000,
+        )
+    except Exception as e:
+        print(f"Navigation warning: {e}")
+        # 即使跳转超时，只要页面已经加载（部分），也可尝试继续
+        
     return p, context, page
 
 
@@ -409,12 +436,56 @@ async def send_once(config: Dict[str, Any], prompt: str) -> AsyncGenerator[str, 
         await p.stop()
 
 
+async def send_local_ollama(config: Dict[str, Any], prompt: str) -> AsyncGenerator[str, None]:
+    """
+    本地 AI 接口实现 (针对 Ollama/OpenAI-compatible)
+    作为网页端失效时的自动降级方案。
+    """
+    url = config.get("target_url", "http://localhost:11434/v1/chat/completions")
+    payload = {
+        "model": config.get("local_model", "llama3"),
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": True
+    }
+    
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            async with client.stream("POST", url, json=payload) as response:
+                if response.status_code != 200:
+                    raise RuntimeError(f"Ollama API Error: {response.status_code}")
+                
+                full_text = ""
+                async for line in response.aiter_lines():
+                    if not line.strip() or line.strip() == "data: [DONE]":
+                        continue
+                    if line.startswith("data: "):
+                        try:
+                            chunk = json.loads(line[6:])
+                            content = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            full_text += content
+                            yield full_text
+                        except json.JSONDecodeError:
+                            continue
+        except Exception as e:
+            raise RuntimeError(f"Failed to connect to local AI (Ollama): {e}. Please ensure Ollama is running.")
+
+
 async def send_with_retry(config: Dict[str, Any], prompt: str) -> AsyncGenerator[str, None]:
-    """带重试机制的发送流程"""
+    """
+    带重试与自动降级机制的发送流程。
+    如果网页端重试失败，将自动尝试本地 AI (若配置)。
+    """
     retries = max(1, int(config.get("max_retries", 3)))
     backoff = float(config.get("backoff_seconds", 1.5))
     last_error: Optional[Exception] = None
+    
+    # 检查是否为本地模式
+    if config.get("send_mode") == "api":
+        async for chunk in send_local_ollama(config, prompt):
+            yield chunk
+        return
 
+    # 网页端重试循环
     for attempt in range(1, retries + 1):
         try:
             async for chunk in send_once(config, prompt):
@@ -422,13 +493,23 @@ async def send_with_retry(config: Dict[str, Any], prompt: str) -> AsyncGenerator
             return
         except Exception as exc:
             last_error = exc
-            print(f"Attempt {attempt}/{retries} failed: {exc}")
+            print(f"Attempt {attempt}/{retries} (Web) failed: {exc}")
             if attempt < retries:
                 wait_s = backoff * (2 ** (attempt - 1))
                 print(f"Retrying in {wait_s:.1f}s...")
                 await asyncio.sleep(wait_s)
-
-    raise RuntimeError(str(last_error) if last_error else "Unknown error")
+    
+    # 网页端彻底失败，触发自动降级 (若非本地模式且存在本地配置)
+    print("\n[Fallback] Web AI failed all retries. Attempting Local AI (Ollama) fallback...")
+    try:
+        # 临时切换到本地配置执行
+        local_cfg = config.copy()
+        local_cfg["target_url"] = "http://localhost:11434/v1/chat/completions"
+        async for chunk in send_local_ollama(local_cfg, prompt):
+            yield chunk
+    except Exception as local_exc:
+        print(f"[Fallback] Local AI also failed: {local_exc}")
+        raise RuntimeError(f"Both Web and Local AI failed. Last Web Error: {last_error}")
 
 
 async def run_task(config: Dict[str, Any]) -> None:

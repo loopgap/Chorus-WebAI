@@ -549,7 +549,8 @@ async def _process_queue_once():
         # 提取前序任务结果 (如果有的话)
         prev_result = ""
         if current_idx > 0:
-            prev_result = TASK_QUEUE[current_idx - 1].result
+            # 仅在明确引用时才注入
+            prev_result = str(TASK_QUEUE[current_idx - 1].result)
         
         target.status = "执行中"
     
@@ -558,35 +559,41 @@ async def _process_queue_once():
     run_cfg["confirm_before_send"] = False
     template_key = TEMPLATE_LABEL_TO_KEY.get(target.template_label, "custom")
     
-    # 动态注入前序结果
+    # 动态注入前序结果 (处理可能存在的 Null 或异常)
     processed_input = target.user_input.replace("{prev_result}", prev_result)
     prompt = core.build_prompt(template_key, processed_input)
 
     started = time.time()
     response = ""
+    ok = False
     try:
         async for chunk in core.send_with_retry(run_cfg, prompt):
             response = chunk
             target.result = f"收到 {len(response)} 字..."
+        
+        if not response:
+            raise RuntimeError("Task executed but returned empty response.")
+            
         target.status = "执行成功"
         target.result = response
         ok = True
     except Exception as exc:
         target.status = "执行失败"
-        target.result = str(exc)
+        target.result = f"Error: {exc}"
         ok = False
-        
-    elapsed = round(time.time() - started, 2)
-    core.append_history(
-        {
-            "time": datetime.now().isoformat(timespec="seconds"),
-            "template": template_key,
-            "input_chars": len(target.user_input),
-            "response_chars": len(response),
-            "duration_seconds": elapsed,
-            "ok": ok,
-        }
-    )
+    finally:
+        elapsed = round(time.time() - started, 2)
+        core.append_history(
+            {
+                "time": datetime.now().isoformat(timespec="seconds"),
+                "template": template_key,
+                "input_chars": len(target.user_input),
+                "response_chars": len(response),
+                "duration_seconds": elapsed,
+                "ok": ok,
+                "error": str(target.result) if not ok else "",
+            }
+        )
     return f"任务 {target.id} 已处理完毕 ({target.status})", _render_queue_table()
 
 async def _clear_queue():
