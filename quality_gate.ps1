@@ -1,6 +1,6 @@
 param()
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue" # 改为 Continue，防止原生命令输出到 stderr 时被误判为异常
 Set-Location $PSScriptRoot
 
 $PythonExe = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"

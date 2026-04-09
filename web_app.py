@@ -63,15 +63,29 @@ LAST_INPUT: Dict[str, str] = {"template": "摘要总结", "content": ""}
 EXPORT_DIR = core.STATE_DIR / "exports"
 DOCS_DIR = core.STATE_DIR / "docs"
 
-PROVIDERS: Dict[str, Dict[str, str]] = {}
-PROVIDER_LABEL_TO_KEY: Dict[str, str] = {}
-TEMPLATE_LABEL_TO_KEY: Dict[str, str] = {}
-KEY_TO_TEMPLATE_LABEL: Dict[str, str] = {}
-TEMPLATE_GUIDE: Dict[str, str] = {}
+PROVIDERS: Dict[str, Dict[str, str]] = {
+    "deepseek": {"label": "DeepSeek", "url": "https://chat.deepseek.com/", "send_mode": "enter", "guide": "建议开启‘回车发送’。如果遇到验证码，请手动完成。"},
+    "kimi": {"label": "Kimi (Moonshot)", "url": "https://kimi.moonshot.cn/", "send_mode": "enter", "guide": "Kimi 网页版响应较快，适合长文本分析。"},
+    "tongyi": {"label": "通义千问 (Qwen)", "url": "https://tongyi.aliyun.com/", "send_mode": "button", "guide": "通义建议使用‘点击按钮’模式进行交互。"},
+}
+PROVIDER_LABEL_TO_KEY: Dict[str, str] = {v["label"]: k for k, v in PROVIDERS.items()}
+
+_DEFAULT_TEMPLATES = {
+    "摘要总结": {"key": "summary", "guide": "输入一段长文章，模型将提取核心要点并列举行动项。"},
+    "润色改写": {"key": "rewrite", "guide": "将草稿改写为专业、流畅的文档。"},
+    "信息抽取": {"key": "extract", "guide": "从文本中提取日期、人物、金额等关键结构化数据。"},
+    "自定义原样发送": {"key": "custom", "guide": "跳过模板，直接将输入内容发送给 AI 模型。"},
+}
+
+TEMPLATE_LABEL_TO_KEY: Dict[str, str] = {k: v["key"] for k, v in _DEFAULT_TEMPLATES.items()}
+KEY_TO_TEMPLATE_LABEL: Dict[str, str] = {v["key"]: k for k, v in _DEFAULT_TEMPLATES.items()}
+KEY_TO_TEMPLATE_LABEL["smoke"] = "冒烟测试"
+TEMPLATE_GUIDE: Dict[str, str] = {k: v["guide"] for k, v in _DEFAULT_TEMPLATES.items()}
+
 CUSTOM_CSS: str = ""
 
 def _load_metadata():
-    """从外部 JSON 和 CSS 文件加载元数据"""
+    """从外部 JSON 和 CSS 文件加载元数据，若不存在则保留默认硬编码值"""
     global PROVIDERS, PROVIDER_LABEL_TO_KEY, TEMPLATE_LABEL_TO_KEY, KEY_TO_TEMPLATE_LABEL, TEMPLATE_GUIDE, CUSTOM_CSS
     
     # 加载 Providers 和 Templates
@@ -79,14 +93,16 @@ def _load_metadata():
     if meta_path.exists():
         try:
             meta = json.loads(meta_path.read_text(encoding="utf-8"))
-            PROVIDERS = meta.get("providers", {})
-            templates = meta.get("templates", {})
+            ext_providers = meta.get("providers", {})
+            if ext_providers:
+                PROVIDERS.update(ext_providers)
+                PROVIDER_LABEL_TO_KEY.update({v["label"]: k for k, v in ext_providers.items()})
             
-            PROVIDER_LABEL_TO_KEY = {v["label"]: k for k, v in PROVIDERS.items()}
-            TEMPLATE_LABEL_TO_KEY = {k: v["key"] for k, v in templates.items()}
-            KEY_TO_TEMPLATE_LABEL = {v["key"]: k for k, v in templates.items()}
-            KEY_TO_TEMPLATE_LABEL["smoke"] = "冒烟测试"
-            TEMPLATE_GUIDE = {k: v["guide"] for k, v in templates.items()}
+            ext_templates = meta.get("templates", {})
+            if ext_templates:
+                TEMPLATE_LABEL_TO_KEY.update({k: v["key"] for k, v in ext_templates.items()})
+                KEY_TO_TEMPLATE_LABEL.update({v["key"]: k for k, v in ext_templates.items()})
+                TEMPLATE_GUIDE.update({k: v["guide"] for k, v in ext_templates.items()})
         except Exception as e:
             print(f"Error loading providers.json: {e}")
 

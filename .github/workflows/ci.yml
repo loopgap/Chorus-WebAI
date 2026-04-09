@@ -19,19 +19,20 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
+        shell: bash
         run: |
           python -m venv .venv
-          .venv\Scripts\Activate.ps1
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install ruff pytest pytest-asyncio
+          ./.venv/Scripts/python.exe -m pip install --upgrade pip
+          ./.venv/Scripts/pip.exe install -r requirements.txt
+          ./.venv/Scripts/pip.exe install ruff pytest pytest-asyncio
 
       - name: Install Playwright Browsers
+        shell: bash
         run: |
-          .venv\Scripts\Activate.ps1
-          python -m playwright install chromium
+          ./.venv/Scripts/python.exe -m playwright install chromium
 
       - name: Run Quality Gate (Lint, Test, Perf)
+        shell: pwsh
         run: |
-          .venv\Scripts\Activate.ps1
+          # PowerShell 质量门禁脚本现在已经内部处理了 stderr 异常情况
           .\quality_gate.ps1

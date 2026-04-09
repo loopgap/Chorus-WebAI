@@ -20,18 +20,18 @@ jobs:
           python-version: "3.13"
 
       - name: Install dependencies
+        shell: bash
         run: |
           python -m venv .venv
-          .venv\Scripts\Activate.ps1
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller
+          ./.venv/Scripts/python.exe -m pip install --upgrade pip
+          ./.venv/Scripts/pip.exe install -r requirements.txt
+          ./.venv/Scripts/pip.exe install pyinstaller
 
       - name: Build Executable
+        shell: bash
         run: |
-          .venv\Scripts\Activate.ps1
-          # 我们把 web_app 打包成一个单文件的直接可执行程序
-          pyinstaller --noconfirm --onefile --windowed --add-data "README.md;." web_app.py
+          # 使用 venv 里的 pyinstaller 路径
+          ./.venv/Scripts/pyinstaller --noconfirm --onefile --windowed --add-data "README.md;." web_app.py
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
