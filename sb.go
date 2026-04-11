@@ -106,7 +106,7 @@ func setup() {
 		fmt.Printf("Failed to install requirements: %v\n", err)
 		os.Exit(1)
 	}
-	if err := runCommand(python, "-m", "pip", "install", "pytest", "ruff", "playwright"); err != nil {
+	if err := runCommand(python, "-m", "pip", "install", "pytest", "pytest-asyncio", "ruff", "playwright"); err != nil {
 		fmt.Printf("Failed to install dev tools: %v\n", err)
 		os.Exit(1)
 	}

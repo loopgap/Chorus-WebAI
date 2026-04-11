@@ -117,7 +117,7 @@ def get_login_lock():
         _LOGIN_LOCK = asyncio.Lock()
     return _LOGIN_LOCK
 LOGIN_STATE: Dict[str, Any] = {"p": None, "context": None, "page": None}
-LAST_INPUT: Dict[str, str] = {"template": "摘要总结", "content": ""}
+LAST_INPUT: Dict[str, str] = {"template": "市场分析 (CMO)", "content": ""}
 
 EXPORT_DIR = core.STATE_DIR / "exports"
 DOCS_DIR = core.STATE_DIR / "docs"
