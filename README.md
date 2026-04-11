@@ -65,8 +65,14 @@ shadowboard/
 ├── main.py                 # CLI 入口
 ├── web_app.py              # 虚拟会议室 Web UI
 ├── tests/                  # 测试文件
-└── docs/                   # 用户指南
+└── docs/                   # 项目维基 (Wiki)
 ```
+
+---
+
+## 📚 更多文档
+
+详细的使用说明、开发指南与 API 文档，请参阅我们的 **[项目维基 (WIKI)](docs/Home.md)**。
 
 ---
 
