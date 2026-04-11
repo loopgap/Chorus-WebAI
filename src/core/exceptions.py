@@ -2,7 +2,7 @@
 Custom Exception Hierarchy
 
 Defines a structured exception hierarchy for consistent error handling
-across the Chorus-WebAI application.
+across the ShadowBoard application.
 """
 
 from __future__ import annotations
@@ -10,9 +10,9 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 
-class ChorusError(Exception):
+class ShadowError(Exception):
     """
-    Base exception for all Chorus-WebAI errors.
+    Base exception for all ShadowBoard errors.
 
     Provides structured error information with error codes,
     context data, and optional cause chaining.
@@ -27,7 +27,7 @@ class ChorusError(Exception):
     ) -> None:
         super().__init__(message)
         self.message = message
-        self.error_code = error_code or "CHORUS_000"
+        self.error_code = error_code or "SHADOW_000"
         self.context = context or {}
         self.cause = cause
 
@@ -50,7 +50,7 @@ class ChorusError(Exception):
         return " | ".join(parts)
 
 
-class ConfigError(ChorusError):
+class ConfigError(ShadowError):
     """Configuration-related errors."""
 
     def __init__(
@@ -70,7 +70,7 @@ class ConfigError(ChorusError):
         )
 
 
-class BrowserError(ChorusError):
+class BrowserError(ShadowError):
     """Browser automation errors."""
 
     def __init__(
@@ -93,7 +93,7 @@ class BrowserError(ChorusError):
         )
 
 
-class TaskError(ChorusError):
+class TaskError(ShadowError):
     """Task execution errors."""
 
     def __init__(
@@ -116,7 +116,7 @@ class TaskError(ChorusError):
         )
 
 
-class WorkflowError(ChorusError):
+class WorkflowError(ShadowError):
     """Workflow orchestration errors."""
 
     def __init__(
@@ -139,7 +139,7 @@ class WorkflowError(ChorusError):
         )
 
 
-class MemoryError(ChorusError):
+class MemoryError(ShadowError):
     """Memory storage errors."""
 
     def __init__(

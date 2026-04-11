@@ -39,7 +39,7 @@ def test_api_doc_build_and_export(tmp_path, monkeypatch):
 
 
 def test_template_help_and_input_tip():
-    assert "模板说明" in web_app._template_help("摘要总结")
+    assert "模板说明" in web_app._template_help("市场分析 (CMO)")
     assert "输入提示" in web_app._input_tip("")
     assert "输入长度" in web_app._input_tip("a" * 30)
 
@@ -217,7 +217,7 @@ async def test_one_click_prepare(monkeypatch):
 @pytest.mark.asyncio
 async def test_run_task_empty(monkeypatch):
     monkeypatch.setattr(web_app, "_history_table", lambda mode="全部": [])
-    async for state in web_app._run_task("摘要总结", "", True):
+    async for state in web_app._run_task("市场分析 (CMO)", "", True):
         status, *_ = state
     assert "取消" in status
 
@@ -226,7 +226,7 @@ async def test_run_task_empty(monkeypatch):
 async def test_run_task_require_confirm(monkeypatch):
     monkeypatch.setattr(web_app.core, "load_config", lambda: {"confirm_before_send": True})
     monkeypatch.setattr(web_app, "_history_table", lambda mode="全部": [])
-    async for state in web_app._run_task("摘要总结", "abc", False):
+    async for state in web_app._run_task("市场分析 (CMO)", "abc", False):
         status, *_ = state
     assert "勾选" in status
 
@@ -241,10 +241,10 @@ async def test_run_task_success(monkeypatch):
     rows = []
     monkeypatch.setattr(web_app.core, "append_history", lambda row: rows.append(row))
     monkeypatch.setattr(web_app, "_history_table", lambda mode="全部": [["x"]])
-    async for state in web_app._run_task("摘要总结", "abc", True):
+    async for state in web_app._run_task("市场分析 (CMO)", "abc", True):
         status, prompt, response, _, hist = state
     assert "成功" in status
-    assert prompt.startswith("summary")
+    assert prompt.startswith("market_analyst")
     assert response == "ok"
     assert hist == [["x"]]
     assert rows and rows[0]["ok"] is True
@@ -263,17 +263,17 @@ async def test_run_task_fail(monkeypatch):
     rows = []
     monkeypatch.setattr(web_app.core, "append_history", lambda row: rows.append(row))
     monkeypatch.setattr(web_app, "_history_table", lambda mode="全部": [["x"]])
-    async for state in web_app._run_task("摘要总结", "abc", True):
+    async for state in web_app._run_task("市场分析 (CMO)", "abc", True):
         status, *_ = state
     assert "失败" in status
     assert rows and rows[0]["ok"] is False
 
 
 def test_reuse_last_input():
-    web_app.LAST_INPUT["template"] = "摘要总结"
+    web_app.LAST_INPUT["template"] = "市场分析 (CMO)"
     web_app.LAST_INPUT["content"] = "abc"
     t, c = web_app._reuse_last_input()
-    assert t == "摘要总结"
+    assert t == "市场分析 (CMO)"
     assert c == "abc"
 
 

@@ -167,6 +167,12 @@ class WorkflowEngine:
         self._workflows: Dict[str, WorkflowDefinition] = {}
         self._executions: Dict[str, WorkflowExecution] = {}
         self._task_executor: Optional[Callable] = None
+        
+        # Register default board workflows
+        self.register_workflow(create_startup_review_workflow())
+        self.register_workflow(create_tech_decision_workflow())
+        self.register_workflow(create_summary_workflow())
+        self.register_workflow(create_translation_workflow())
 
     def register_executor(
         self,
@@ -351,6 +357,82 @@ class WorkflowEngine:
 
 
 # Predefined workflow templates
+def create_startup_review_workflow() -> WorkflowDefinition:
+    """Create CMO → CTO → CFO → Chairman workflow for startup review."""
+    return WorkflowDefinition(
+        id="startup_review",
+        name="Startup Review Meeting",
+        description="Comprehensive startup proposal review by CMO, CTO, CFO and Chairman",
+        steps=[
+            WorkflowStep(
+                id="market",
+                name="Market Analysis (CMO)",
+                step_type=StepType.TASK,
+                template_key="market_analyst",
+                user_input="{user_input}",
+            ),
+            WorkflowStep(
+                id="tech",
+                name="Technical Feasibility (CTO)",
+                step_type=StepType.TASK,
+                template_key="tech_lead",
+                user_input="议案内容：{user_input}\n\n前序市场分析结果：\n{prev_result}",
+                depends_on=["market"],
+            ),
+            WorkflowStep(
+                id="finance",
+                name="Financial Audit (CFO)",
+                step_type=StepType.TASK,
+                template_key="finance_expert",
+                user_input="议案内容：{user_input}\n\n前序技术分析结果：\n{prev_result}",
+                depends_on=["tech"],
+            ),
+            WorkflowStep(
+                id="summary",
+                name="Chairman Summary",
+                step_type=StepType.TASK,
+                template_key="chairman_summary",
+                user_input="会议议程完毕，请总结汇报：\n\n议案：{user_input}\n\n会议发言记录：\n{prev_result}",
+                depends_on=["finance"],
+            ),
+        ],
+    )
+
+
+def create_tech_decision_workflow() -> WorkflowDefinition:
+    """Create CTO → Risk → Chairman workflow for technical decisions."""
+    return WorkflowDefinition(
+        id="tech_decision",
+        name="Technical Architecture Review",
+        description="Focused technical decision review with risk management",
+        steps=[
+            WorkflowStep(
+                id="tech",
+                name="Technical Architecture (CTO)",
+                step_type=StepType.TASK,
+                template_key="tech_lead",
+                user_input="{user_input}",
+            ),
+            WorkflowStep(
+                id="risk",
+                name="Risk Assessment",
+                step_type=StepType.TASK,
+                template_key="risk_manager",
+                user_input="议案及技术方案：\n{prev_result}",
+                depends_on=["tech"],
+            ),
+            WorkflowStep(
+                id="summary",
+                name="Decision Summary",
+                step_type=StepType.TASK,
+                template_key="chairman_summary",
+                user_input="议案：{user_input}\n\n技术方案与风险评估记录：\n{prev_result}",
+                depends_on=["risk"],
+            ),
+        ],
+    )
+
+
 def create_summary_workflow() -> WorkflowDefinition:
     """Create a summary → extract → format workflow."""
     return WorkflowDefinition(

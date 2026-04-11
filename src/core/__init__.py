@@ -1,7 +1,7 @@
 """
 Core Module
 
-Provides essential components for the Chorus-WebAI engine:
+Provides essential components for the ShadowBoard engine:
 - Configuration management
 - Browser automation
 - Exception definitions
@@ -9,7 +9,7 @@ Provides essential components for the Chorus-WebAI engine:
 
 from .config import ConfigManager, get_config, set_config
 from .exceptions import (
-    ChorusError,
+    ShadowError,
     ConfigError,
     BrowserError,
     TaskError,
@@ -22,7 +22,7 @@ __all__ = [
     "ConfigManager",
     "get_config",
     "set_config",
-    "ChorusError",
+    "ShadowError",
     "ConfigError",
     "BrowserError",
     "TaskError",

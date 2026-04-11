@@ -293,7 +293,7 @@ def test_task_tracker_basic():
     from src.models.task import TaskStatus
     
     # Use a fixed temp path
-    tmpdir = Path(os.environ.get('TEMP', '/tmp')) / 'chorus_test_tracker'
+    tmpdir = Path(os.environ.get('TEMP', '/tmp')) / 'shadowboard_test_tracker'
     tmpdir.mkdir(exist_ok=True)
     
     tracker = TaskTracker(state_dir=tmpdir)
@@ -327,7 +327,7 @@ def test_memory_store_basic():
     """Test MemoryStore basic functionality."""
     from src.services.memory_store import MemoryStore
     
-    tmpdir = Path(os.environ.get('TEMP', '/tmp')) / 'chorus_test_memory'
+    tmpdir = Path(os.environ.get('TEMP', '/tmp')) / 'shadowboard_test_memory'
     tmpdir.mkdir(exist_ok=True)
     
     store = MemoryStore(state_dir=tmpdir)
@@ -371,8 +371,8 @@ def test_workflow_engine_basic():
     engine.register_workflow(workflow)
     
     workflows = engine.list_workflows()
-    assert len(workflows) == 1
-    assert workflows[0].id == "test_basic"
+    assert len(workflows) >= 1
+    assert any(w.id == "test_basic" for w in workflows)
 
 
 def test_monitor_basic():

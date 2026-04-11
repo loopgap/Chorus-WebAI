@@ -11,6 +11,11 @@ from typing import Any, Dict
 
 # Template definitions
 TEMPLATES: Dict[str, str] = {
+    "market_analyst": "你现在是 ShadowBoard 的首席营销官 (CMO)。请从市场规模、竞争对手、用户痛点和增长潜力的角度，深度分析以下议案，并指出 3 个核心市场风险：\n\n{user_input}",
+    "tech_lead": "你现在是 ShadowBoard 的首席技术官 (CTO)。请评估以下议案的技术可行性、架构复杂度、潜在技术债以及所需的核心技术栈。如果涉及已有分析，请结合参考：\n\n{user_input}",
+    "finance_expert": "你现在是 ShadowBoard 的首席财务官 (CFO)。请对以下议案进行冷酷的成本收益分析，指出潜在的财务黑洞、盈利模式的漏洞以及资金链风险：\n\n{user_input}",
+    "risk_manager": "你现在是 ShadowBoard 的风险合规官。请针对以下议案及之前的专家意见，寻找法律、合规、隐私以及逻辑上的致命缺陷，进行'红队测试'：\n\n{user_input}",
+    "chairman_summary": "你现在是 ShadowBoard 的董事长。请阅读以下所有董事会成员的辩论记录，总结共识点与核心分歧，并最终给出一个明确的'执行/否决/推迟'建议，附带 3 条行动指令：\n\n{user_input}",
     "summary": "Summarize the following content in 5 bullets:\n\n{user_input}",
     "translation": "Translate the following text to Chinese and keep meaning precise:\n\n{user_input}",
     "rewrite": "Rewrite the following text to be clear and professional:\n\n{user_input}",

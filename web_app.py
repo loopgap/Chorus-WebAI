@@ -89,10 +89,7 @@ def _get_workflow_engine() -> WorkflowEngine:
     global _workflow_engine
     if _workflow_engine is None:
         _workflow_engine = WorkflowEngine()
-        # Register predefined workflows
-        from src.services.workflow import create_summary_workflow, create_translation_workflow
-        _workflow_engine.register_workflow(create_summary_workflow())
-        _workflow_engine.register_workflow(create_translation_workflow())
+        # Note: Default board workflows are registered in WorkflowEngine.__init__
     return _workflow_engine
 
 def _get_monitor() -> Monitor:
@@ -131,10 +128,12 @@ PROVIDERS: Dict[str, Dict[str, str]] = {
 PROVIDER_LABEL_TO_KEY: Dict[str, str] = {v["label"]: k for k, v in PROVIDERS.items()}
 
 _DEFAULT_TEMPLATES = {
-    "摘要总结": {"key": "summary", "guide": "输入一段长文章，模型将提取核心要点并列举行动项。"},
-    "润色改写": {"key": "rewrite", "guide": "将草稿改写为专业、流畅的文档。"},
-    "信息抽取": {"key": "extract", "guide": "从文本中提取日期、人物、金额等关键结构化数据。"},
-    "自定义原样发送": {"key": "custom", "guide": "跳过模板，直接将输入内容发送给 AI 模型。"},
+    "市场分析 (CMO)": {"key": "market_analyst", "guide": "从市场规模、竞争对手、用户痛点角度分析议案。"},
+    "技术评估 (CTO)": {"key": "tech_lead", "guide": "评估技术可行性、架构复杂度及核心技术栈。"},
+    "财务审计 (CFO)": {"key": "finance_expert", "guide": "进行成本收益分析，指出潜在财务风险。"},
+    "风险管理 (Red Team)": {"key": "risk_manager", "guide": "寻找法律、合规及逻辑上的致命缺陷点。"},
+    "董事长总结 (Chairman)": {"key": "chairman_summary", "guide": "阅读所有董事记录，给出最终执行/否决建议。"},
+    "自定义原样发送": {"key": "custom", "guide": "跳过角色，直接将输入内容发送给当前 AI 平台。"},
 }
 
 TEMPLATE_LABEL_TO_KEY: Dict[str, str] = {k: v["key"] for k, v in _DEFAULT_TEMPLATES.items()}
@@ -213,61 +212,61 @@ def _provider_guide_text(provider_label: str) -> str:
 
 def _build_api_doc_text() -> str:
     lines = [
-        "Chorus-WebAI | 网页 AI 协同引擎 v2.3 接口文档",
+        "ShadowBoard | 个人虚拟董事会 & 零成本 MoE 决策引擎 v3.0 接口文档",
         "",
-        "=== 核心架构特性 ===",
-        "1. 多模型接力 (Relay)：支持使用 {prev_result} 引用前序任务输出",
-        "2. 语义锚点 (Anchor)：内置 A11y 降级定位策略，增强对 UI 改版的抗性",
-        "3. 视觉证据链 (Evidence)：自动记录错误现场快照与黑匣子日志",
-        "4. 故障自愈 (Recovery)：线性回退重试 + 本地 Ollama 降级",
+        "=== 核心产品特性 ===",
+        "1. 🎭 角色化辩论 (Debate)：内置 CMO, CTO, CFO, Risk Manager 等专家角色 Prompt",
+        "2. 🎼 跨模型接力 (Relay)：支持使用 {prev_result} 自动注入前序董事会环节输出",
+        "3. ⚖️ 自动聚合 (Synthesis)：支持由本地模型或指定节点担任董事长进行最终归纳",
+        "4. 🛡️ 故障自愈 (Recovery)：线性回退重试 + 本地 Ollama 降级保障议程不中断",
         "",
-        "=== v2.3 新特性 ===",
+        "=== v3.0 重构特性 ===",
         "5. 任务追踪 (TaskTracker)：完整生命周期管理、事件监听、依赖解析",
-        "6. 记忆存储 (MemoryStore)：多会话管理、上下文窗口、消息搜索",
-        "7. 工作流引擎 (Workflow)：DAG编排、条件分支、并行执行",
-        "8. 监控告警 (Monitor)：指标收集、健康检查、告警管理",
+        "6. 会议纪要 (MemoryStore)：多会话管理、上下文窗口、消息语义搜索",
+        "7. 智能工作流 (Workflow)：内置 Startup_Review 等 4 套标准会议议程",
+        "8. 决策报表 (Monitor)：决策效率指标收集、系统健康度、告警管理",
         "",
-        "=== 功能事件列表 ===",
+        "=== 董事会功能列表 ===",
         "",
         "-- 平台与配置 --",
-        "1. 应用平台预设 - 切换目标 AI 平台",
+        "1. 应用平台预设 - 切换目标 AI 董事会席位 (DeepSeek/Kimi/Qwen)",
         "2. 保存参数 - 持久化配置到 config.json",
-        "3. 打开登录浏览器 - 启动持久化浏览器会话",
-        "4. 登录完成检查 - 验证登录状态并保存会话",
-        "5. 执行冒烟测试 - 发送测试消息验证链路",
-        "6. 一键准备 - 自动执行初始化流程",
+        "3. 建立远程连接 - 启动持久化浏览器会话",
+        "4. 登录状态验证 - 验证 Web AI 登录状态",
+        "5. 执行冒烟测试 - 发送测试消息验证链路连通性",
+        "6. 一键准备 - 自动化初始化董事会环境",
         "",
-        "-- 任务执行 --",
-        "7. 开始执行 - 发送任务并等待响应",
-        "8. 复用上次输入 - 快速填充历史输入",
-        "9. 导出结果 - 保存响应为 MD/TXT 文件",
+        "-- 召开会议 --",
+        "7. 立即执行 - 执行单个董事环节并等待响应",
+        "8. 复用议案 - 快速填充历史输入内容",
+        "9. 导出纪要 - 保存 AI 响应为 Markdown 格式",
         "",
-        "-- 批量队列 --",
-        "10. 加入队列 - 添加任务到批量队列",
-        "11. 执行首项 - 处理队列首个任务",
-        "12. 清空队列 - 移除所有待处理任务",
+        "-- 链式会议 (队列) --",
+        "10. 加入议程 - 添加任务到批量辩论队列",
+        "11. 执行首个环节 - 处理队列首个董事会环节",
+        "12. 清空议程 - 移除所有待处理环节",
         "",
-        "-- 工作流引擎 --",
-        "13. 查看工作流详情 - 显示步骤和依赖",
-        "14. 执行工作流 - 运行完整工作流",
+        "-- 智能工作流 --",
+        "13. 查看议程详情 - 显示步骤角色和逻辑依赖",
+        "14. 一键召开董事会 - 运行完整预设工作流",
         "",
-        "-- 记忆存储 --",
-        "15. 创建会话 - 新建对话会话",
-        "16. 切换会话 - 切换到指定会话",
-        "17. 查看上下文 - 显示会话历史",
+        "-- 会议纪要 --",
+        "15. 开启新议程 - 新建对话会话",
+        "16. 切换议程 - 切换到指定历史纪要",
+        "17. 查看发言记录 - 显示会话详细历史内容",
         "",
-        "-- 监控面板 --",
-        "18. 刷新仪表盘 - 获取系统状态",
-        "19. 任务统计 - 查看执行统计",
-        "20. 健康检查 - 系统组件状态",
+        "-- 决策报表 --",
+        "18. 刷新仪表盘 - 获取系统运行状态",
+        "19. 执行统计 - 查看各角色执行频率与耗时",
+        "20. 组件健康度 - 检测自动化引擎各组件状态",
         "",
         "-- 历史与诊断 --",
-        "21. 刷新历史 - 同步任务记录",
-        "22. 清空历史 - 清除所有记录",
-        "23. 健康检查 - 完整系统诊断",
-        "24. 查看错误日志 - 显示最近异常",
+        "21. 同步物理历史 - 从本地磁盘刷新记录",
+        "22. 清空物理记录 - 彻底清除本地任务日志",
+        "23. 底层体检 - 完整系统链路状态诊断",
+        "24. 错误追溯 - 显示最近 5 条异常现场日志",
         "",
-        "=== 平台支持 ===",
+        "=== 平台支持席位 ===",
     ]
     for p in PROVIDERS.values():
         lines.append(f"- {p['label']} {p['url']} 发送方式 {p['send_mode']}")
@@ -883,17 +882,17 @@ def build_ui() -> gr.Blocks:
     import gradio as gr
     provider_labels = [v["label"] for v in PROVIDERS.values()]
 
-    with gr.Blocks(title="Chorus-WebAI | 网页 AI 协同引擎") as demo:
+    with gr.Blocks(title="ShadowBoard | 个人虚拟董事会 & 零成本 MoE 决策引擎") as demo:
         gr.HTML(
             """
 <div class='hero'>
-  <div class='hero-title'>Chorus-WebAI</div>
-  <div class='hero-sub'>跨平台 AI 协同引擎：让网页 AI 成为您的生产力突触</div>
+  <div class='hero-title'>ShadowBoard</div>
+  <div class='hero-sub'>个人虚拟董事会 & 零成本 MoE 决策引擎：让每一份灵感都经得起多维度的拷问</div>
   <div class='hero-chips'>
-    <span class='hero-chip'>🎭 多模型接力 (Relay)</span>
-    <span class='hero-chip'>📸 视觉证据链</span>
-    <span class='hero-chip'>⚓ 语义锚点</span>
-    <span class='hero-chip'>🛡️ 故障自愈</span>
+    <span class='hero-chip'>🎭 多角色辩论 (Debate)</span>
+    <span class='hero-chip'>🎼 跨模型接力 (Relay)</span>
+    <span class='hero-chip'>⚓ 语义锚点 (Anchor)</span>
+    <span class='hero-chip'>🛡️ 故障自愈 (Recovery)</span>
   </div>
 </div>
 """.strip()
@@ -904,21 +903,21 @@ def build_ui() -> gr.Blocks:
                 with gr.Row():
                     with gr.Column(scale=2):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>操作向导</div>")
+                            gr.Markdown("<div class='section-title'>董事会操作向导</div>")
                             guide_markdown = gr.Markdown()
                             with gr.Row():
                                 refresh_guide_btn = gr.Button("刷新进度", elem_classes=["action-secondary"])
-                                one_click_btn = gr.Button("一键初始化环境", elem_classes=["action-primary"])
+                                one_click_btn = gr.Button("一键初始化董事会环境", elem_classes=["action-primary"])
                     
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>智能特性</div>")
+                            gr.Markdown("<div class='section-title'>智能决策特性</div>")
                             gr.Markdown(
                                 """
-- **链式接力**: `{prev_result}` 自动注入
-- **自愈定位**: A11y 语义树 fallback
-- **执行存证**: 自动生成错误快照
-- **本地回退**: 支持 Ollama 离线方案
+- **多角色辩论**: CMO/CTO/CFO 角色注入
+- **任务接力**: `{prev_result}` 跨模型透传
+- **自愈定位**: 零成本抗 UI 变动能力
+- **本地归纳**: 支持 Ollama 董事长归纳
 """.strip()
                             )
 
@@ -926,14 +925,14 @@ def build_ui() -> gr.Blocks:
                 with gr.Row():
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>平台预设</div>")
-                            provider_label = gr.Dropdown(provider_labels, value=PROVIDERS["deepseek"]["label"], label="目标平台")
+                            gr.Markdown("<div class='section-title'>AI 平台预设</div>")
+                            provider_label = gr.Dropdown(provider_labels, value=PROVIDERS["deepseek"]["label"], label="当前激活平台")
                             apply_provider_btn = gr.Button("应用预设", elem_classes=["action-secondary"])
                             provider_guide = gr.Textbox(label="平台指引", lines=3, elem_classes=["provider-card"])
 
                     with gr.Column(scale=2):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>执行参数</div>")
+                            gr.Markdown("<div class='section-title'>全局参数</div>")
                             with gr.Row():
                                 target_url = gr.Textbox(label="入口地址", scale=2)
                                 send_mode = gr.Radio(choices=[("回车", "enter"), ("点击", "button")], label="交互方式", scale=1)
@@ -946,24 +945,24 @@ def build_ui() -> gr.Blocks:
                 with gr.Row():
                     with gr.Column():
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>浏览器会话控制</div>")
+                            gr.Markdown("<div class='section-title'>浏览器会话控制 (持久化存储)</div>")
                             with gr.Row():
-                                open_login_btn = gr.Button("🔑 打开登录窗口", elem_classes=["action-secondary"])
-                                finish_login_btn = gr.Button("✅ 登录状态验证", elem_classes=["action-secondary"])
+                                open_login_btn = gr.Button("🔑 建立远程连接/登录", elem_classes=["action-secondary"])
+                                finish_login_btn = gr.Button("✅ 登录检查与持久化", elem_classes=["action-secondary"])
                                 smoke_btn = gr.Button("🔥 链路冒烟测试", elem_classes=["action-primary"])
                             with gr.Row():
                                 smoke_confirm = gr.Checkbox(label="我已准备好测试")
                                 smoke_pause = gr.Slider(0, 15, 3, label="测试前暂停 (s)")
                                 setup_status = gr.Textbox(label="系统日志", lines=1)
 
-            with gr.Tab("📝 执行任务"):
+            with gr.Tab("📝 召开会议 (单次任务)"):
                 with gr.Row():
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>任务编排</div>")
-                            template_label = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="摘要总结", label="任务模板")
+                            gr.Markdown("<div class='section-title'>会议议案编排</div>")
+                            template_label = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="市场分析 (CMO)", label="议案模板 (角色)")
                             template_help = gr.Markdown()
-                            task_input = gr.Textbox(label="输入原始内容", lines=12, placeholder="在此粘贴文本或输入指令...")
+                            task_input = gr.Textbox(label="输入议案/想法正文", lines=12, placeholder="在此输入需要董事会评估的想法或原始需求...")
                             input_tip = gr.Markdown()
                             send_confirm = gr.Checkbox(label="确认发送 (建议开启)", value=True)
                             with gr.Row():
@@ -972,106 +971,106 @@ def build_ui() -> gr.Blocks:
 
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
-                            gr.Markdown("<div class='section-title'>执行反馈</div>")
+                            gr.Markdown("<div class='section-title'>执行结果反馈</div>")
                             run_status = gr.Textbox(label="执行进度", lines=1)
                             prompt_preview = gr.Textbox(label="提示词预览", lines=2, visible=False)
                             response_box = gr.Textbox(label="AI 响应内容", lines=18)
                             with gr.Row():
-                                export_btn = gr.Button("导出 MD 报告", elem_classes=["action-secondary"])
+                                export_btn = gr.Button("导出 会议纪要 (MD)", elem_classes=["action-secondary"])
                                 export_file = gr.File(label="点击下载", interactive=False)
                                 export_status = gr.Textbox(label="导出状态", lines=1, visible=False)
 
-            with gr.Tab("📊 批量任务队列"):
+            with gr.Tab("📊 链式会议 (队列)"):
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>添加链式任务</div>")
+                    gr.Markdown("<div class='section-title'>添加链式辩论环节</div>")
                     with gr.Row():
-                        q_template = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="摘要总结", label="模板")
-                        q_input = gr.Textbox(label="内容 (支持 {prev_result})", scale=3)
-                        q_add_btn = gr.Button("加入队列", elem_classes=["action-primary"], scale=1)
+                        q_template = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="市场分析 (CMO)", label="角色环节")
+                        q_input = gr.Textbox(label="针对性指令 (支持 {prev_result} 引用前序环节)", scale=3)
+                        q_add_btn = gr.Button("加入议程", elem_classes=["action-primary"], scale=1)
                         q_add_status = gr.Textbox(label="添加结果", lines=1, visible=False)
                 
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>队列监控</div>")
+                    gr.Markdown("<div class='section-title'>议程队列监控</div>")
                     with gr.Row():
-                        q_run_btn = gr.Button("▶ 执行首项", elem_classes=["action-primary"])
-                        q_clear_btn = gr.Button("🗑️ 清空全部", elem_classes=["action-secondary"])
-                        q_refresh_btn = gr.Button("🔄 刷新状态", elem_classes=["action-secondary"])
-                    q_run_status = gr.Textbox(label="运行状态", lines=1)
-                    q_grid = gr.Dataframe(headers=["ID", "添加时间", "模板", "预览", "状态", "结果"], interactive=False)
+                        q_run_btn = gr.Button("▶ 执行首个环节", elem_classes=["action-primary"])
+                        q_clear_btn = gr.Button("🗑️ 清空议程", elem_classes=["action-secondary"])
+                        q_refresh_btn = gr.Button("🔄 刷新议程状态", elem_classes=["action-secondary"])
+                    q_run_status = gr.Textbox(label="议程运行状态", lines=1)
+                    q_grid = gr.Dataframe(headers=["ID", "添加时间", "环节", "预览", "状态", "结果"], interactive=False)
 
-            with gr.Tab("🛠️ 诊断与历史"):
+            # Updated Tab: Workflow Engine
+            with gr.Tab("🔄 智能工作流"):
                 with gr.Group(elem_classes=["section-card"]):
+                    gr.Markdown("<div class='section-title'>内置董事会工作流模板</div>")
                     with gr.Row():
-                        history_filter = gr.Radio(choices=HISTORY_FILTERS, value="全部", label="结果过滤")
-                        refresh_history_btn = gr.Button("同步历史", elem_classes=["action-secondary"])
-                    history_grid = gr.Dataframe(interactive=False)
-                    with gr.Row():
-                        health_btn = gr.Button("系统体检", elem_classes=["action-secondary"])
-                        error_btn = gr.Button("日志回溯", elem_classes=["action-secondary"])
-                        clear_history_btn = gr.Button("清空记录", elem_classes=["action-secondary"])
-                    diag_box = gr.Textbox(label="控制台输出", lines=10, elem_classes=["provider-card"])
-
-            # New Tab: Workflow Engine
-            with gr.Tab("🔄 工作流引擎"):
-                with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>工作流模板</div>")
-                    with gr.Row():
-                        workflow_select = gr.Dropdown(choices=_list_workflows(), label="选择工作流")
-                        workflow_info_btn = gr.Button("查看详情", elem_classes=["action-secondary"])
+                        workflow_select = gr.Dropdown(choices=_list_workflows(), label="选择智能工作流")
+                        workflow_info_btn = gr.Button("查看议程详情", elem_classes=["action-secondary"])
                     workflow_details = gr.Textbox(label="工作流详情", lines=6, interactive=False)
                 
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>执行工作流</div>")
-                    workflow_input = gr.Textbox(label="输入内容", lines=4, placeholder="输入工作流所需的内容...")
+                    gr.Markdown("<div class='section-title'>自动执行完整会议议程</div>")
+                    workflow_input = gr.Textbox(label="输入核心议案", lines=4, placeholder="输入需要各部门协作的完整议案内容...")
                     with gr.Row():
-                        workflow_run_btn = gr.Button("▶ 执行工作流", elem_classes=["action-primary"])
-                        workflow_status = gr.Textbox(label="执行状态", lines=1)
-                    workflow_result = gr.Textbox(label="执行结果", lines=10)
+                        workflow_run_btn = gr.Button("▶ 一键召开董事会", elem_classes=["action-primary"])
+                        workflow_status = gr.Textbox(label="议程状态", lines=1)
+                    workflow_result = gr.Textbox(label="最终决策报告/汇总", lines=10)
 
-            # New Tab: Memory & Sessions
-            with gr.Tab("💾 记忆存储"):
+            # Updated Tab: Memory & Sessions
+            with gr.Tab("💾 会议纪要 (记忆)"):
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>会话管理</div>")
+                    gr.Markdown("<div class='section-title'>董事会历史会话</div>")
                     with gr.Row():
-                        session_title = gr.Textbox(label="新会话标题", scale=2)
-                        create_session_btn = gr.Button("创建会话", elem_classes=["action-primary"])
-                    session_list = gr.Dataframe(headers=["ID", "标题", "消息数", "状态", "更新时间"], interactive=False)
+                        session_title = gr.Textbox(label="新会议标题", scale=2)
+                        create_session_btn = gr.Button("开启新议程", elem_classes=["action-primary"])
+                    session_list = gr.Dataframe(headers=["ID", "标题", "发言次数", "状态", "更新时间"], interactive=False)
                     with gr.Row():
-                        refresh_sessions_btn = gr.Button("刷新列表", elem_classes=["action-secondary"])
-                        switch_session_input = gr.Textbox(label="切换到会话ID")
-                        switch_session_btn = gr.Button("切换会话", elem_classes=["action-secondary"])
+                        refresh_sessions_btn = gr.Button("刷新纪要列表", elem_classes=["action-secondary"])
+                        switch_session_input = gr.Textbox(label="切换到历史议程ID")
+                        switch_session_btn = gr.Button("切换议程", elem_classes=["action-secondary"])
                 
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>会话上下文</div>")
-                    session_context_btn = gr.Button("查看当前上下文", elem_classes=["action-secondary"])
-                    session_context = gr.Textbox(label="对话历史", lines=8, interactive=False)
-                    memory_stats = gr.Textbox(label="内存统计", lines=3)
+                    gr.Markdown("<div class='section-title'>完整发言记录</div>")
+                    session_context_btn = gr.Button("查看发言记录", elem_classes=["action-secondary"])
+                    session_context = gr.Textbox(label="董事会对话历史", lines=8, interactive=False)
+                    memory_stats = gr.Textbox(label="存储统计", lines=3)
 
-            # New Tab: Monitoring Dashboard
-            with gr.Tab("📈 监控面板"):
+            # Updated Tab: Monitoring Dashboard
+            with gr.Tab("📈 董事会报表"):
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>系统监控</div>")
+                    gr.Markdown("<div class='section-title'>决策效率监控</div>")
                     with gr.Row():
-                        dashboard_refresh_btn = gr.Button("刷新仪表盘", elem_classes=["action-primary"])
-                        task_stats_btn = gr.Button("任务统计", elem_classes=["action-secondary"])
-                    dashboard_data = gr.Textbox(label="仪表盘数据", lines=15)
+                        dashboard_refresh_btn = gr.Button("刷新数据报表", elem_classes=["action-primary"])
+                        task_stats_btn = gr.Button("执行频率统计", elem_classes=["action-secondary"])
+                    dashboard_data = gr.Textbox(label="决策仪表盘数据", lines=15)
                 
                 with gr.Group(elem_classes=["section-card"]):
-                    gr.Markdown("<div class='section-title'>性能指标</div>")
+                    gr.Markdown("<div class='section-title'>系统运行指标</div>")
                     with gr.Row():
-                        metrics_health_btn = gr.Button("健康检查", elem_classes=["action-secondary"])
-                        metrics_tasks_btn = gr.Button("任务指标", elem_classes=["action-secondary"])
-                    metrics_display = gr.Textbox(label="性能数据", lines=10)
+                        metrics_health_btn = gr.Button("组件健康度", elem_classes=["action-secondary"])
+                        metrics_tasks_btn = gr.Button("成功率统计", elem_classes=["action-secondary"])
+                    metrics_display = gr.Textbox(label="指标数据", lines=10)
+
+        with gr.Tab("🛠️ 诊断与日志"):
+            with gr.Group(elem_classes=["section-card"]):
+                with gr.Row():
+                    history_filter = gr.Radio(choices=HISTORY_FILTERS, value="全部", label="结果过滤")
+                    refresh_history_btn = gr.Button("同步物理历史", elem_classes=["action-secondary"])
+                history_grid = gr.Dataframe(interactive=False)
+                with gr.Row():
+                    health_btn = gr.Button("系统底层体检", elem_classes=["action-secondary"])
+                    error_btn = gr.Button("底层错误追溯", elem_classes=["action-secondary"])
+                    clear_history_btn = gr.Button("清空物理记录", elem_classes=["action-secondary"])
+                diag_box = gr.Textbox(label="底层控制台输出", lines=10, elem_classes=["provider-card"])
 
         with gr.Tab("帮助文档"):
             with gr.Group(elem_classes=["section-card"]):
-                gr.Markdown("<div class='section-title'>接口文档与使用指引</div>")
-                api_doc_box = gr.Textbox(label="接口文档内容", lines=18)
+                gr.Markdown("<div class='section-title'>接口文档与开发者指引</div>")
+                api_doc_box = gr.Textbox(label="接口说明内容", lines=18)
                 with gr.Row():
                     refresh_doc_btn = gr.Button("刷新接口文档", elem_classes=["action-secondary"])
                     export_doc_btn = gr.Button("导出接口文档", elem_classes=["action-primary"])
                 api_doc_file = gr.File(label="接口文档下载", interactive=False)
-                api_doc_status = gr.Textbox(label="文档状态", lines=2)
+                api_doc_status = gr.Textbox(label="文档生成状态", lines=2)
 
         apply_provider_btn.click(
             fn=_apply_provider,

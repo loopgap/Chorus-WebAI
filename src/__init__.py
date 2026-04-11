@@ -1,8 +1,8 @@
 """
-Chorus-WebAI Source Package
+ShadowBoard Source Package
 
-A modular, extensible web AI orchestration engine.
+A modular, extensible personal virtual boardroom and web AI orchestration engine.
 """
 
-__version__ = "2.3.0"
-__author__ = "Chorus-WebAI Team"
+__version__ = "3.0.0"
+__author__ = "ShadowBoard Team"

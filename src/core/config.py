@@ -199,10 +199,10 @@ class ConfigManager:
         Get configuration value with environment variable override.
 
         Environment variables take precedence over file configuration.
-        Format: CHORUS_<UPPERCASE_KEY>
+        Format: SHADOW_<UPPERCASE_KEY>
         """
         # Check environment variable first
-        env_key = f"CHORUS_{key.upper()}"
+        env_key = f"SHADOW_{key.upper()}"
         env_value = os.environ.get(env_key)
         if env_value is not None:
             # Type conversion based on default type

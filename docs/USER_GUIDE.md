@@ -1,6 +1,6 @@
-# Chorus-WebAI 深度操作指南 (V2.3)
+# ShadowBoard 深度操作指南 (V3.0)
 
-本手册旨在帮助高级用户深入理解 **Chorus-WebAI** 的配置体系、新特性与进阶技巧。
+本手册旨在帮助高级用户深入理解 **ShadowBoard** 的配置体系、新特性与进阶技巧。
 
 ---
 
@@ -451,4 +451,5 @@ DEFAULT_PROVIDERS["new_platform"] = ProviderConfig(
 
 ---
 
-*Chorus-WebAI v2.3：让网页 AI 成为您的生产力突触。*
+*ShadowBoard v3.0：让每一份灵感都经得起多维度的拷问。*
+*

@@ -1,7 +1,7 @@
 """
-Chorus-WebAI Main Entry Point (Refactored)
+ShadowBoard Main Entry Point (Refactored)
 
-This module provides the CLI interface while delegating to the new modular architecture.
+This module provides the CLI interface for the personal virtual boardroom.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-__version__ = "2.3.0"
+__version__ = "3.0.0"
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
@@ -641,11 +641,11 @@ async def async_main() -> None:
 
     while True:
         print("\n" + "=" * 70)
-        print("Chorus-WebAI | Web AI Orchestration Engine v2.3")
+        print("ShadowBoard | 个人虚拟董事会 & 零成本 MoE 决策引擎 v3.0")
         print("1) Quick setup (recommended)")
         print("2) First login only")
-        print("3) Run task")
-        print("4) Recent history")
+        print("3) Run board task")
+        print("4) Recent board minutes (history)")
         print("5) Settings")
         print("6) Task statistics")
         print("7) System health")
