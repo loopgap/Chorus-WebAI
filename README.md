@@ -24,17 +24,16 @@
 ## 🚀 快速开始 (Quick Start)
 
 ### 1. 环境准备
-确保您的系统已安装 Python 3.13+，然后执行：
+确保您的系统已安装 Python 3.13+ 和 Go 1.21+，然后执行：
 ```powershell
-# 克隆仓库并安装依赖
-pip install -r requirements.txt
-python -m playwright install chromium
+# 自动创建 venv 并安装所有依赖（包括 Playwright 浏览器）
+go run sb.go setup
 ```
 
 ### 2. 启动虚拟会议室
-运行主程序，系统将打开 Web 界面：
+运行任务运行器启动 Web 界面：
 ```powershell
-python web_app.py
+go run sb.go web
 ```
 
 ### 3. 召开您的首个董事会

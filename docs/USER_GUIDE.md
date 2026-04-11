@@ -403,20 +403,20 @@ rm -rf .semi_agent/
 ## 🛠️ 开发者维护命令
 
 ```powershell
+# 环境初始化 (创建 venv, 安装依赖, 安装 Playwright)
+go run sb.go setup
+
 # 运行全量单元测试
-python -m pytest tests/ -v
+go run sb.go test
 
-# 运行特定模块测试
-python -m pytest tests/test_task_tracker.py -v
+# 运行性能门禁与静态检查 (Quality Gate)
+go run sb.go check
 
-# 运行性能门禁自测
-python perf_check.py
+# 启动 Web UI (Boardroom)
+go run sb.go web
 
-# 启动 Web UI
-python web_app.py
-
-# 启动 CLI 模式
-python main.py
+# 启动 CLI 模式 (Expert Advisor)
+go run sb.go cli
 ```
 
 ---
