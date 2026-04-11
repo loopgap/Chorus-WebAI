@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import time
 
 
@@ -52,7 +53,7 @@ def main() -> int:
     multiplier = 5.0 if is_ci else 1.0
     
     if is_ci:
-        print(f"Detected CI environment. Applying {multiplier}x multiplier to performance thresholds.")
+        print(f"Detected CI environment. Applying {multiplier}x multiplier to performance thresholds.", file=sys.stderr)
 
     failed = []
     for k, base_limit in limits.items():
