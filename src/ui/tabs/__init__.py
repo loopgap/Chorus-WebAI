@@ -12,12 +12,12 @@ from . import task_tab as task_tab
 from . import workflow_tab as workflow_tab
 
 __all__ = [
-	"setup_tab",
-	"task_tab",
-	"queue_tab",
-	"workflow_tab",
-	"memory_tab",
-	"monitor_tab",
-	"diag_tab",
-	"help_tab",
+    "setup_tab",
+    "task_tab",
+    "queue_tab",
+    "workflow_tab",
+    "memory_tab",
+    "monitor_tab",
+    "diag_tab",
+    "help_tab",
 ]

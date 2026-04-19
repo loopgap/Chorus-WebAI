@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Callable
 
 from .exceptions import ConfigError
+from src.utils.i18n import t
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
 @dataclass
 class ProviderConfig:
     """Configuration for an AI provider."""
+
     key: str
     label: str
     url: str
@@ -122,6 +124,7 @@ class ConfigManager:
         self._providers: Dict[str, ProviderConfig] = DEFAULT_PROVIDERS.copy()
         self._config: Dict[str, Any] = {}
         self._listeners: List[Callable[[str, Any], None]] = []
+        self._cache: Dict[str, Any] = {}
 
         self._ensure_state_dir()
         self._config = self._load_config()
@@ -157,13 +160,13 @@ class ConfigManager:
         except json.JSONDecodeError as e:
             logger.error(f"Configuration file is corrupted: {e} at {self._config_path}")
             raise ConfigError(
-                f"Configuration file is corrupted: {e}",
+                t("errors.config_corrupted", error=str(e)),
                 context={"file": str(self._config_path)},
             )
         except Exception as e:
             logger.error(f"Failed to load configuration from {self._config_path}: {e}")
             raise ConfigError(
-                f"Failed to load configuration: {e}",
+                t("errors.config_load_failed", path=str(self._config_path), error=str(e)),
                 cause=e,
             )
 
@@ -205,8 +208,10 @@ class ConfigManager:
 
         Environment variables take precedence over file configuration.
         Format: SHADOW_<UPPERCASE_KEY>
+
+        Results are cached for performance. Cache is invalidated on config changes.
         """
-        # Check environment variable first
+        # Check environment variable first (not cached)
         env_key = f"SHADOW_{key.upper()}"
         env_value = os.environ.get(env_key)
         if env_value is not None:
@@ -220,11 +225,18 @@ class ConfigManager:
                 return float(env_value)
             return env_value
 
-        return self._config.get(key, default)
+        # Use cache for config values
+        if key in self._cache:
+            return self._cache[key]
+
+        value = self._config.get(key, default)
+        self._cache[key] = value
+        return value
 
     def set(self, key: str, value: Any, save: bool = True) -> None:
         """Set configuration value and optionally persist."""
         self._config[key] = value
+        self._cache.clear()  # Invalidate cache
 
         if save:
             self._save_config(self._config)
@@ -267,6 +279,7 @@ class ConfigManager:
     def reload(self) -> None:
         """Reload configuration from file."""
         self._config = self._load_config()
+        self._cache.clear()
 
 
 # Global config manager instance
@@ -292,3 +305,53 @@ def get_config(key: str, default: Any = None) -> Any:
 def set_config(key: str, value: Any, save: bool = True) -> None:
     """Convenience function to set configuration value."""
     get_config_manager().set(key, value, save)
+
+
+# Provider helper functions (moved from events.py)
+
+
+def provider_label_from_config(cfg: Dict[str, Any]) -> str:
+    """Convert config dict to provider label string."""
+    # Import here to avoid circular imports
+    from src.core.templates import PROVIDERS
+
+    key = str(cfg.get("provider_key", "deepseek")).strip()
+    if key in PROVIDERS:
+        return PROVIDERS[key]["label"]
+    return PROVIDERS["deepseek"]["label"]
+
+
+def provider_guide_text(provider_label: str) -> str:
+    """Get guide text for a provider label."""
+    # Import here to avoid circular imports
+    from src.core.templates import PROVIDER_LABEL_TO_KEY, PROVIDERS
+
+    key = PROVIDER_LABEL_TO_KEY.get(provider_label, "deepseek")
+    item = PROVIDERS[key]
+    return "\n".join(
+        [
+            f"平台 {item['label']}",
+            f"推荐网址 {item['url']}",
+            f"推荐发送方式 {'回车发送' if item['send_mode'] == 'enter' else '点击按钮发送'}",
+            f"操作建议 {item['guide']}",
+        ]
+    )
+
+
+def apply_provider(provider_label: str) -> tuple:
+    """Apply provider preset and return (url, send_mode, guide_text, status).
+
+    Returns:
+        Tuple of (target_url, send_mode, provider_guide, status_message)
+    """
+    # Import here to avoid circular imports
+    from src.core.templates import PROVIDER_LABEL_TO_KEY, PROVIDERS
+
+    key = PROVIDER_LABEL_TO_KEY.get(provider_label, "deepseek")
+    item = PROVIDERS[key]
+    return (
+        item["url"],
+        item["send_mode"],
+        provider_guide_text(provider_label),
+        f"已切换平台 {item['label']}",
+    )

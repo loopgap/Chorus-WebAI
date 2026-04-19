@@ -9,6 +9,7 @@ from typing import Tuple
 
 from src.ui.state import PROVIDERS, DOCS_DIR
 
+
 def build_api_doc_text() -> str:
     lines = [
         "ShadowBoard | 个人虚拟董事会 & 零成本 MoE 决策引擎 v3.0 接口文档",

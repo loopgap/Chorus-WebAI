@@ -10,9 +10,8 @@ from datetime import datetime
 from typing import Tuple
 
 import main as core
-from src.ui.state import (
-    TEMPLATE_LABEL_TO_KEY, TEMPLATE_GUIDE, LAST_INPUT, EXPORT_DIR
-)
+from src.ui.state import TEMPLATE_LABEL_TO_KEY, TEMPLATE_GUIDE, LAST_INPUT, EXPORT_DIR
+
 
 def template_help(template_label: str) -> str:
     guide = TEMPLATE_GUIDE.get(template_label, "")
@@ -33,6 +32,7 @@ def input_tip(user_input: str) -> str:
 
 async def run_task(template_label: str, user_input: str, confirmed: bool):
     from src.ui.tabs.diag_tab import history_table
+
     raw_input = (user_input or "").strip()
     if not raw_input:
         yield "任务已取消 输入为空", "", "", "输入提示 请先填写任务内容", history_table("全部")
@@ -57,8 +57,14 @@ async def run_task(template_label: str, user_input: str, confirmed: bool):
         async for chunk in core.send_with_retry(run_cfg, prompt):
             response = chunk
             elapsed = round(time.time() - started, 2)
-            yield f"执行中... 用时 {elapsed} 秒，收到 {len(response)} 字", prompt[:3000], response, input_tip(raw_input), history_table("全部")
-            
+            yield (
+                f"执行中... 用时 {elapsed} 秒，收到 {len(response)} 字",
+                prompt[:3000],
+                response,
+                input_tip(raw_input),
+                history_table("全部"),
+            )
+
         elapsed = round(time.time() - started, 2)
         core.append_history(
             {
@@ -85,7 +91,13 @@ async def run_task(template_label: str, user_input: str, confirmed: bool):
                 "error": str(exc),
             }
         )
-        yield f"执行失败 用时 {elapsed} 秒 错误 {exc}", prompt[:3000], response, input_tip(raw_input), history_table("全部")
+        yield (
+            f"执行失败 用时 {elapsed} 秒 错误 {exc}",
+            prompt[:3000],
+            response,
+            input_tip(raw_input),
+            history_table("全部"),
+        )
 
 
 def reuse_last_input() -> Tuple[str, str]:

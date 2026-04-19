@@ -19,6 +19,7 @@ from typing import List, Optional, AsyncGenerator, TYPE_CHECKING
 
 from .config import get_config_manager
 from .exceptions import BrowserError
+from src.utils.i18n import t
 
 if TYPE_CHECKING:
     from playwright.async_api import BrowserContext, Page, Playwright, Locator
@@ -33,6 +34,7 @@ class BrowserSession:
 
     Tracks session state, health, and resource usage.
     """
+
     id: str
     created_at: datetime = field(default_factory=datetime.now)
     last_used: datetime = field(default_factory=datetime.now)
@@ -74,6 +76,7 @@ class BrowserManager:
         """Ensure Playwright is initialized."""
         if self._playwright is None:
             from playwright.async_api import async_playwright
+
             self._playwright = await async_playwright().start()
         return self._playwright
 
@@ -108,39 +111,34 @@ class BrowserManager:
         try:
             if preferred_channel:
                 self._context = await playwright.chromium.launch_persistent_context(
-                    channel=preferred_channel,
-                    **launch_kwargs
+                    channel=preferred_channel, **launch_kwargs
                 )
             else:
-                self._context = await playwright.chromium.launch_persistent_context(
-                    **launch_kwargs
-                )
+                self._context = await playwright.chromium.launch_persistent_context(**launch_kwargs)
         except Exception as e:
             # Fallback to default chromium
             logger.warning(f"Failed to launch with channel '{preferred_channel}': {e}. Falling back to default.")
             try:
-                self._context = await playwright.chromium.launch_persistent_context(
-                    **launch_kwargs
-                )
+                self._context = await playwright.chromium.launch_persistent_context(**launch_kwargs)
             except Exception as inner_e:
                 # 修复：显式清理资源防止僵尸进程
                 await self.close()
                 raise BrowserError(
-                    f"Failed to launch browser: {inner_e}",
+                    t("errors.browser_init_failed", error=str(inner_e)),
                     cause=inner_e,
                 )
 
         # Create or get page
         try:
             if self._context is None:
-                raise BrowserError("Browser context is None after launch")
-                
+                raise BrowserError(t("errors.browser_context_none"))
+
             if not self._context.pages:
                 await self._context.new_page()
-            
+
             if not self._context.pages:
-                raise BrowserError("Failed to create page in browser context")
-                
+                raise BrowserError(t("errors.browser_page_creation_failed"))
+
             self._page = self._context.pages[0]
 
             # Configure timeouts
@@ -149,11 +147,12 @@ class BrowserManager:
 
             # Create session tracking
             import uuid
+
             self._session = BrowserSession(id=uuid.uuid4().hex[:8])
             self._session.page_count = len(self._context.pages)
         except Exception as e:
             await self.close()
-            raise BrowserError(f"Failed to initialize browser state: {e}", cause=e)
+            raise BrowserError(t("errors.browser_init_failed", error=str(e)), cause=e)
 
         return self._context
 
@@ -169,7 +168,7 @@ class BrowserManager:
                 await self.launch()
 
             if self._page is None:
-                raise BrowserError("Browser page is unavailable")
+                raise BrowserError(t("errors.browser_page_unavailable"))
 
             if self._session:
                 self._session.touch()
@@ -193,9 +192,9 @@ class BrowserManager:
         """
         config = get_config_manager()
         target_url = url or config.get("target_url")
-        
+
         if not target_url:
-            raise BrowserError("No navigation URL specified")
+            raise BrowserError(t("errors.no_navigation_url"))
 
         page = await self.get_page()
         timeout = config.get("navigation_timeout_seconds", 30) * 1000
@@ -208,14 +207,21 @@ class BrowserManager:
             )
         except Exception as e:
             # 修复：根据重要性适度向上抛出或记录错误状态，防止盲目执行
-            error_msg = f"Navigation failed for {target_url}: {e}"
+            error_msg = t("errors.navigation_failed", url=target_url, error=str(e))
             logger.error(error_msg)
-            
+
             if self._session:
                 self._session.record_error()
-                
+
             # 如果是关键连接错误，向上抛出异常
-            if any(err in str(e) for err in ["ERR_NAME_NOT_RESOLVED", "ERR_CONNECTION_REFUSED", "Timeout"]):
+            if any(
+                err in str(e)
+                for err in [
+                    "ERR_NAME_NOT_RESOLVED",
+                    "ERR_CONNECTION_REFUSED",
+                    "Timeout",
+                ]
+            ):
                 raise BrowserError(error_msg, cause=e)
 
         return page
@@ -267,13 +273,14 @@ class BrowserManager:
             if url:
                 await self.navigate(url)
             if self._page is None:
-                raise BrowserError("Failed to initialize page in session context")
+                raise BrowserError(t("errors.browser_page_init_failed"))
             yield self._page
         finally:
             await self.close()
 
 
 # Element Locator Utilities
+
 
 async def get_first_visible_locator(
     page: Page,

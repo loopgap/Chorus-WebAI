@@ -28,8 +28,8 @@ def main() -> int:
     _, metrics["history_table_seconds"] = timed(app._history_table, "全部")
 
     limits = {
-        "import_web_app_seconds": 12.0,
-        "build_ui_seconds": 3.0,
+        "import_web_app_seconds": 1.0,  # After lazy loading, import is fast
+        "build_ui_seconds": 15.0,  # gradio import now counts here (was in import)
         "build_guide_seconds": 0.4,
         "build_api_doc_seconds": 0.4,
         "history_table_seconds": 0.6,
@@ -44,7 +44,17 @@ def main() -> int:
         if metrics[k] > effective_limit:
             failed.append({"metric": k, "value": metrics[k], "limit": effective_limit})
 
-    print(json.dumps({"metrics": metrics, "limits": {k: v * multiplier for k, v in limits.items()}, "failed": failed}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                "metrics": metrics,
+                "limits": {k: v * multiplier for k, v in limits.items()},
+                "failed": failed,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 1 if failed else 0
 
 

@@ -11,6 +11,7 @@ import main as core
 from src.core.dependencies import get_task_tracker, get_memory_store
 from src.ui.state import KEY_TO_TEMPLATE_LABEL
 
+
 def history_table(filter_mode: str = "全部") -> List[List[Any]]:
     rows = core.read_history(limit=120)
     out: List[List[Any]] = []
@@ -55,15 +56,15 @@ def latest_errors() -> str:
 
 def health_check() -> str:
     cfg = core.load_config()
-    
+
     # Get task statistics from tracker
     tracker = get_task_tracker()
     task_stats = tracker.get_statistics()
-    
+
     # Get memory statistics
     memory = get_memory_store()
     memory_stats = memory.get_statistics()
-    
+
     status = {
         "状态目录": str(core.STATE_DIR),
         "登录目录存在": core.PROFILE_DIR.exists(),

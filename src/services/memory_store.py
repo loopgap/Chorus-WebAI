@@ -17,8 +17,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.models.session import Session, SessionState, Message
+from src.utils.i18n import t
 
 
 class MemoryStore:
@@ -43,6 +45,7 @@ class MemoryStore:
             self._db_path = state_dir / "memory.db"
         else:
             from src.core.config import get_config_manager
+
             self._db_path = get_config_manager().state_dir / "memory.db"
 
         self._sessions: Dict[str, Session] = {}
@@ -167,19 +170,25 @@ class MemoryStore:
             conn.row_factory = sqlite3.Row
 
             if session_id:
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     SELECT * FROM messages
                     WHERE session_id = ? AND content LIKE ?
                     ORDER BY timestamp DESC
                     LIMIT ?
-                """, (session_id, f"%{query}%", limit))
+                """,
+                    (session_id, f"%{query}%", limit),
+                )
             else:
-                cursor = conn.execute("""
+                cursor = conn.execute(
+                    """
                     SELECT * FROM messages
                     WHERE content LIKE ?
                     ORDER BY timestamp DESC
                     LIMIT ?
-                """, (f"%{query}%", limit))
+                """,
+                    (f"%{query}%", limit),
+                )
 
             return [dict(row) for row in cursor.fetchall()]
 
@@ -194,17 +203,30 @@ class MemoryStore:
 
             if state:
                 cursor = conn.execute(
-                    "SELECT id FROM sessions WHERE state = ? ORDER BY updated_at DESC LIMIT ?",
-                    (state.value, limit)
+                    "SELECT * FROM sessions WHERE state = ? ORDER BY updated_at DESC LIMIT ?",
+                    (state.value, limit),
                 )
             else:
-                cursor = conn.execute(
-                    "SELECT id FROM sessions ORDER BY updated_at DESC LIMIT ?",
-                    (limit,)
-                )
+                cursor = conn.execute("SELECT * FROM sessions ORDER BY updated_at DESC LIMIT ?", (limit,))
 
-            session_ids = [row["id"] for row in cursor.fetchall()]
-            return [self.get_session(sid) for sid in session_ids if self.get_session(sid)]
+            sessions = []
+            for row in cursor.fetchall():
+                session = Session(
+                    id=row["id"],
+                    title=row["title"] or "",
+                    provider_key=row["provider_key"] or "deepseek",
+                    state=SessionState(row["state"] or "active"),
+                    summary=row["summary"] or "",
+                    metadata=json.loads(row["metadata"] or "{}"),
+                )
+                if row["created_at"]:
+                    session.created_at = datetime.fromisoformat(row["created_at"])
+                if row["updated_at"]:
+                    session.updated_at = datetime.fromisoformat(row["updated_at"])
+                if row["last_message_at"]:
+                    session.last_message_at = datetime.fromisoformat(row["last_message_at"])
+                sessions.append(session)
+            return sessions
 
     def archive_session(self, session_id: str) -> bool:
         """Archive a session."""
@@ -233,36 +255,42 @@ class MemoryStore:
     def _persist_session(self, session: Session) -> None:
         """Persist session to database."""
         with sqlite3.connect(self._db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO sessions (
                     id, title, provider_key, state, summary,
                     created_at, updated_at, last_message_at, metadata
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                session.id,
-                session.title,
-                session.provider_key,
-                session.state.value,
-                session.summary,
-                session.created_at.isoformat(),
-                session.updated_at.isoformat(),
-                session.last_message_at.isoformat() if session.last_message_at else None,
-                json.dumps(session.metadata),
-            ))
+            """,
+                (
+                    session.id,
+                    session.title,
+                    session.provider_key,
+                    session.state.value,
+                    session.summary,
+                    session.created_at.isoformat(),
+                    session.updated_at.isoformat(),
+                    (session.last_message_at.isoformat() if session.last_message_at else None),
+                    json.dumps(session.metadata),
+                ),
+            )
 
     def _persist_message(self, session_id: str, message: Message) -> None:
         """Persist message to database."""
         with sqlite3.connect(self._db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT INTO messages (session_id, role, content, timestamp, metadata)
                 VALUES (?, ?, ?, ?, ?)
-            """, (
-                session_id,
-                message.role,
-                message.content,
-                message.timestamp.isoformat(),
-                json.dumps(message.metadata),
-            ))
+            """,
+                (
+                    session_id,
+                    message.role,
+                    message.content,
+                    message.timestamp.isoformat(),
+                    json.dumps(message.metadata),
+                ),
+            )
 
     def _load_session(self, session_id: str) -> Optional[Session]:
         """Load session from database."""
@@ -299,12 +327,14 @@ class MemoryStore:
                 (session_id,),
             )
             for msg_row in cursor.fetchall():
-                session.messages.append(Message(
-                    role=msg_row["role"],
-                    content=msg_row["content"],
-                    timestamp=datetime.fromisoformat(msg_row["timestamp"]),
-                    metadata=json.loads(msg_row["metadata"] or "{}"),
-                ))
+                session.messages.append(
+                    Message(
+                        role=msg_row["role"],
+                        content=msg_row["content"],
+                        timestamp=datetime.fromisoformat(msg_row["timestamp"]),
+                        metadata=json.loads(msg_row["metadata"] or "{}"),
+                    )
+                )
 
             return session
 
@@ -313,9 +343,7 @@ class MemoryStore:
         with sqlite3.connect(self._db_path) as conn:
             sessions = conn.execute("SELECT COUNT(*) FROM sessions").fetchone()[0]
             messages = conn.execute("SELECT COUNT(*) FROM messages").fetchone()[0]
-            active = conn.execute(
-                "SELECT COUNT(*) FROM sessions WHERE state = 'active'"
-            ).fetchone()[0]
+            active = conn.execute("SELECT COUNT(*) FROM sessions WHERE state = 'active'").fetchone()[0]
 
             return {
                 "total_sessions": sessions,
@@ -371,7 +399,7 @@ class SessionManager:
 
         message = self._store.add_message(session.id, role, content)
         if not message:
-            raise RuntimeError(f"Failed to add message to session {session.id}")
+            raise RuntimeError(t("errors.message_add_failed", session_id=session.id))
 
         return message
 

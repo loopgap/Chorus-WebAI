@@ -4,13 +4,22 @@ UI Assembly Module
 
 from __future__ import annotations
 
-import gradio as gr
 from src.ui.state import PROVIDERS, TEMPLATE_LABEL_TO_KEY, HISTORY_FILTERS
 from src.ui.tabs import (
-    setup_tab, task_tab, queue_tab, workflow_tab, memory_tab, monitor_tab, diag_tab, help_tab
+    setup_tab,
+    task_tab,
+    queue_tab,
+    workflow_tab,
+    memory_tab,
+    monitor_tab,
+    diag_tab,
+    help_tab,
 )
 
-def build_ui() -> gr.Blocks:
+
+def build_ui():
+    import gradio as gr
+
     provider_labels = [v["label"] for v in PROVIDERS.values()]
 
     with gr.Blocks(title="ShadowBoard | 个人虚拟董事会 & 零成本 MoE 决策引擎") as demo:
@@ -38,9 +47,12 @@ def build_ui() -> gr.Blocks:
                             guide_markdown = gr.Markdown()
                             with gr.Row():
                                 refresh_guide_btn = gr.Button("刷新进度", elem_classes=["action-secondary"])
-                                one_click_btn = gr.Button("一键初始化董事会环境", elem_classes=["action-primary"])
+                                one_click_btn = gr.Button(
+                                    "一键初始化董事会环境",
+                                    elem_classes=["action-primary"],
+                                )
                                 shutdown_btn = gr.Button("🛑 安全关闭系统 (Shutdown)", variant="stop")
-                    
+
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
                             gr.Markdown("<div class='section-title'>智能决策特性</div>")
@@ -58,16 +70,28 @@ def build_ui() -> gr.Blocks:
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
                             gr.Markdown("<div class='section-title'>AI 平台预设</div>")
-                            provider_label = gr.Dropdown(provider_labels, value=PROVIDERS["deepseek"]["label"], label="当前激活平台")
+                            provider_label = gr.Dropdown(
+                                provider_labels,
+                                value=PROVIDERS["deepseek"]["label"],
+                                label="当前激活平台",
+                            )
                             apply_provider_btn = gr.Button("应用预设", elem_classes=["action-secondary"])
-                            provider_guide = gr.Textbox(label="平台指引", lines=3, elem_classes=["provider-card"])
+                            provider_guide = gr.Textbox(
+                                label="平台指引",
+                                lines=3,
+                                elem_classes=["provider-card"],
+                            )
 
                     with gr.Column(scale=2):
                         with gr.Group(elem_classes=["section-card"]):
                             gr.Markdown("<div class='section-title'>全局参数</div>")
                             with gr.Row():
                                 target_url = gr.Textbox(label="入口地址", scale=2)
-                                send_mode = gr.Radio(choices=[("回车", "enter"), ("点击", "button")], label="交互方式", scale=1)
+                                send_mode = gr.Radio(
+                                    choices=[("回车", "enter"), ("点击", "button")],
+                                    label="交互方式",
+                                    scale=1,
+                                )
                             with gr.Row():
                                 confirm_before_send = gr.Checkbox(label="启用确认发送", value=True)
                                 max_retries = gr.Slider(1, 6, 3, label="重试次数")
@@ -79,8 +103,14 @@ def build_ui() -> gr.Blocks:
                         with gr.Group(elem_classes=["section-card"]):
                             gr.Markdown("<div class='section-title'>浏览器会话控制 (持久化存储)</div>")
                             with gr.Row():
-                                open_login_btn = gr.Button("🔑 建立远程连接/登录", elem_classes=["action-secondary"])
-                                finish_login_btn = gr.Button("✅ 登录检查与持久化", elem_classes=["action-secondary"])
+                                open_login_btn = gr.Button(
+                                    "🔑 建立远程连接/登录",
+                                    elem_classes=["action-secondary"],
+                                )
+                                finish_login_btn = gr.Button(
+                                    "✅ 登录检查与持久化",
+                                    elem_classes=["action-secondary"],
+                                )
                                 smoke_btn = gr.Button("🔥 链路冒烟测试", elem_classes=["action-primary"])
                             with gr.Row():
                                 smoke_confirm = gr.Checkbox(label="我已准备好测试")
@@ -92,9 +122,17 @@ def build_ui() -> gr.Blocks:
                     with gr.Column(scale=1):
                         with gr.Group(elem_classes=["section-card"]):
                             gr.Markdown("<div class='section-title'>会议议案编排</div>")
-                            template_label = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="市场分析 (CMO)", label="议案模板 (角色)")
+                            template_label = gr.Dropdown(
+                                list(TEMPLATE_LABEL_TO_KEY.keys()),
+                                value="市场分析 (CMO)",
+                                label="议案模板 (角色)",
+                            )
                             template_help = gr.Markdown()
-                            task_input = gr.Textbox(label="输入议案/想法正文", lines=12, placeholder="在此输入需要董事会评估的想法或原始需求...")
+                            task_input = gr.Textbox(
+                                label="输入议案/想法正文",
+                                lines=12,
+                                placeholder="在此输入需要董事会评估的想法或原始需求...",
+                            )
                             input_tip = gr.Markdown()
                             send_confirm = gr.Checkbox(label="确认发送 (建议开启)", value=True)
                             with gr.Row():
@@ -108,7 +146,10 @@ def build_ui() -> gr.Blocks:
                             prompt_preview = gr.Textbox(label="提示词预览", lines=2, visible=False)
                             response_box = gr.Textbox(label="AI 响应内容", lines=18)
                             with gr.Row():
-                                export_btn = gr.Button("导出 会议纪要 (MD)", elem_classes=["action-secondary"])
+                                export_btn = gr.Button(
+                                    "导出 会议纪要 (MD)",
+                                    elem_classes=["action-secondary"],
+                                )
                                 export_file = gr.File(label="点击下载", interactive=False)
                                 export_status = gr.Textbox(label="导出状态", lines=1, visible=False)
 
@@ -116,11 +157,18 @@ def build_ui() -> gr.Blocks:
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>添加链式辩论环节</div>")
                     with gr.Row():
-                        q_template = gr.Dropdown(list(TEMPLATE_LABEL_TO_KEY.keys()), value="市场分析 (CMO)", label="角色环节")
-                        q_input = gr.Textbox(label="针对性指令 (支持 {prev_result} 引用前序环节)", scale=3)
+                        q_template = gr.Dropdown(
+                            list(TEMPLATE_LABEL_TO_KEY.keys()),
+                            value="市场分析 (CMO)",
+                            label="角色环节",
+                        )
+                        q_input = gr.Textbox(
+                            label="针对性指令 (支持 {prev_result} 引用前序环节)",
+                            scale=3,
+                        )
                         q_add_btn = gr.Button("加入议程", elem_classes=["action-primary"], scale=1)
                         q_add_status = gr.Textbox(label="添加结果", lines=1, visible=False)
-                
+
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>议程队列监控</div>")
                     with gr.Row():
@@ -128,19 +176,29 @@ def build_ui() -> gr.Blocks:
                         q_clear_btn = gr.Button("🗑️ 清空议程", elem_classes=["action-secondary"])
                         q_refresh_btn = gr.Button("🔄 刷新议程状态", elem_classes=["action-secondary"])
                     q_run_status = gr.Textbox(label="议程运行状态", lines=1)
-                    q_grid = gr.Dataframe(headers=["ID", "添加时间", "环节", "预览", "状态", "结果"], interactive=False)
+                    q_grid = gr.Dataframe(
+                        headers=["ID", "添加时间", "环节", "预览", "状态", "结果"],
+                        interactive=False,
+                    )
 
             with gr.Tab("🔄 智能工作流"):
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>内置董事会工作流模板</div>")
                     with gr.Row():
-                        workflow_select = gr.Dropdown(choices=workflow_tab.list_workflows(), label="选择智能工作流")
+                        workflow_select = gr.Dropdown(
+                            choices=workflow_tab.list_workflows(),
+                            label="选择智能工作流",
+                        )
                         workflow_info_btn = gr.Button("查看议程详情", elem_classes=["action-secondary"])
                     workflow_details = gr.Textbox(label="工作流详情", lines=6, interactive=False)
-                
+
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>自动执行完整会议议程</div>")
-                    workflow_input = gr.Textbox(label="输入核心议案", lines=4, placeholder="输入需要各部门协作的完整议案内容...")
+                    workflow_input = gr.Textbox(
+                        label="输入核心议案",
+                        lines=4,
+                        placeholder="输入需要各部门协作的完整议案内容...",
+                    )
                     with gr.Row():
                         workflow_run_btn = gr.Button("▶ 一键召开董事会", elem_classes=["action-primary"])
                         workflow_status = gr.Textbox(label="议程状态", lines=1)
@@ -152,12 +210,15 @@ def build_ui() -> gr.Blocks:
                     with gr.Row():
                         session_title = gr.Textbox(label="新会议标题", scale=2)
                         create_session_btn = gr.Button("开启新议程", elem_classes=["action-primary"])
-                    session_list = gr.Dataframe(headers=["ID", "标题", "发言次数", "状态", "更新时间"], interactive=False)
+                    session_list = gr.Dataframe(
+                        headers=["ID", "标题", "发言次数", "状态", "更新时间"],
+                        interactive=False,
+                    )
                     with gr.Row():
                         refresh_sessions_btn = gr.Button("刷新纪要列表", elem_classes=["action-secondary"])
                         switch_session_input = gr.Textbox(label="切换到历史议程ID")
                         switch_session_btn = gr.Button("切换议程", elem_classes=["action-secondary"])
-                
+
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>完整发言记录</div>")
                     session_context_btn = gr.Button("查看发言记录", elem_classes=["action-secondary"])
@@ -171,7 +232,7 @@ def build_ui() -> gr.Blocks:
                         dashboard_refresh_btn = gr.Button("刷新数据报表", elem_classes=["action-primary"])
                         task_stats_btn = gr.Button("执行频率统计", elem_classes=["action-secondary"])
                     dashboard_data = gr.Textbox(label="决策仪表盘数据", lines=15)
-                
+
                 with gr.Group(elem_classes=["section-card"]):
                     gr.Markdown("<div class='section-title'>系统运行指标</div>")
                     with gr.Row():
@@ -209,12 +270,23 @@ def build_ui() -> gr.Blocks:
         )
         save_btn.click(
             fn=setup_tab.save_config_from_form,
-            inputs=[provider_label, target_url, send_mode, confirm_before_send, max_retries, response_timeout],
+            inputs=[
+                provider_label,
+                target_url,
+                send_mode,
+                confirm_before_send,
+                max_retries,
+                response_timeout,
+            ],
             outputs=[setup_status, guide_markdown, provider_guide],
         )
         open_login_btn.click(fn=setup_tab.open_login_browser, outputs=[setup_status, guide_markdown])
         finish_login_btn.click(fn=setup_tab.finish_login_check, outputs=[setup_status, guide_markdown])
-        smoke_btn.click(fn=setup_tab.run_smoke_test, inputs=[smoke_confirm, smoke_pause], outputs=[setup_status, guide_markdown])
+        smoke_btn.click(
+            fn=setup_tab.run_smoke_test,
+            inputs=[smoke_confirm, smoke_pause],
+            outputs=[setup_status, guide_markdown],
+        )
         one_click_btn.click(fn=setup_tab.one_click_prepare, outputs=[setup_status, guide_markdown])
         shutdown_btn.click(fn=setup_tab.shutdown_system, outputs=[setup_status])
         refresh_guide_btn.click(fn=setup_tab.build_guide_markdown, outputs=[guide_markdown])
@@ -228,24 +300,52 @@ def build_ui() -> gr.Blocks:
             inputs=[template_label, task_input, send_confirm],
             outputs=[run_status, prompt_preview, response_box, input_tip, history_grid],
         )
-        export_btn.click(fn=task_tab.export_response, inputs=[response_box], outputs=[export_file, export_status])
+        export_btn.click(
+            fn=task_tab.export_response,
+            inputs=[response_box],
+            outputs=[export_file, export_status],
+        )
 
         # --- Queue Tab Events ---
-        q_add_btn.click(fn=queue_tab.add_to_queue, inputs=[q_template, q_input], outputs=[q_add_status])
+        q_add_btn.click(
+            fn=queue_tab.add_to_queue,
+            inputs=[q_template, q_input],
+            outputs=[q_add_status],
+        )
         q_refresh_btn.click(fn=queue_tab.render_queue_table, outputs=[q_grid])
         q_clear_btn.click(fn=queue_tab.clear_queue, outputs=[q_run_status, q_grid])
         q_run_btn.click(fn=queue_tab.process_queue_once, outputs=[q_run_status, q_grid])
 
         # --- Workflow Tab Events ---
-        workflow_info_btn.click(fn=workflow_tab.get_workflow_details, inputs=[workflow_select], outputs=[workflow_details])
-        workflow_run_btn.click(fn=workflow_tab.execute_workflow, inputs=[workflow_select, workflow_input], outputs=[workflow_status, workflow_result])
+        workflow_info_btn.click(
+            fn=workflow_tab.get_workflow_details,
+            inputs=[workflow_select],
+            outputs=[workflow_details],
+        )
+        workflow_run_btn.click(
+            fn=workflow_tab.execute_workflow,
+            inputs=[workflow_select, workflow_input],
+            outputs=[workflow_status, workflow_result],
+        )
 
         # --- Memory Tab Events ---
-        create_session_btn.click(fn=memory_tab.create_session, inputs=[session_title], outputs=[session_context, session_list])
+        create_session_btn.click(
+            fn=memory_tab.create_session,
+            inputs=[session_title],
+            outputs=[session_context, session_list],
+        )
         refresh_sessions_btn.click(fn=memory_tab.list_sessions, outputs=[session_list])
-        switch_session_btn.click(fn=memory_tab.switch_session, inputs=[switch_session_input], outputs=[session_context, session_context])
-        session_context_btn.click(fn=memory_tab.get_session_context, inputs=[switch_session_input], outputs=[session_context])
-        
+        switch_session_btn.click(
+            fn=memory_tab.switch_session,
+            inputs=[switch_session_input],
+            outputs=[session_context, session_context],
+        )
+        session_context_btn.click(
+            fn=memory_tab.get_session_context,
+            inputs=[switch_session_input],
+            outputs=[session_context],
+        )
+
         # --- Monitor Tab Events ---
         dashboard_refresh_btn.click(fn=monitor_tab.get_dashboard_data, outputs=[dashboard_data])
         task_stats_btn.click(fn=monitor_tab.get_task_statistics, outputs=[dashboard_data])

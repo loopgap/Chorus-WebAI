@@ -11,6 +11,7 @@ Provides system monitoring with:
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 import time
 from collections import defaultdict
@@ -20,9 +21,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+logger = logging.getLogger(__name__)
+
 
 class AlertLevel(Enum):
     """Alert severity levels."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -31,6 +35,7 @@ class AlertLevel(Enum):
 
 class MetricType(Enum):
     """Types of metrics."""
+
     COUNTER = "counter"
     GAUGE = "gauge"
     HISTOGRAM = "histogram"
@@ -39,6 +44,7 @@ class MetricType(Enum):
 @dataclass
 class Metric:
     """Represents a single metric measurement."""
+
     name: str
     value: float
     metric_type: MetricType
@@ -58,6 +64,7 @@ class Metric:
 @dataclass
 class Alert:
     """Represents an alert event."""
+
     id: str = ""
     name: str = ""
     level: AlertLevel = AlertLevel.INFO
@@ -81,6 +88,7 @@ class Alert:
 @dataclass
 class HealthStatus:
     """Represents health check result."""
+
     component: str
     healthy: bool
     message: str = ""
@@ -109,6 +117,7 @@ class MetricsCollector:
             self._db_path = state_dir / "metrics.db"
         else:
             from src.core.config import get_config_manager
+
             self._db_path = get_config_manager().state_dir / "metrics.db"
 
         self._counters: Dict[str, float] = defaultdict(float)
@@ -167,6 +176,7 @@ class MetricsCollector:
 
     def time(self, name: str, tags: Optional[Dict[str, str]] = None):
         """Context manager to time an operation."""
+
         class Timer:
             def __init__(self, collector: "MetricsCollector", n: str, t: Optional[Dict[str, str]]):
                 self.collector = collector
@@ -195,7 +205,13 @@ class MetricsCollector:
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(
                 "INSERT INTO metrics (name, value, type, timestamp, tags) VALUES (?, ?, ?, ?, ?)",
-                (name, value, metric_type.value, datetime.now().isoformat(), json.dumps(tags))
+                (
+                    name,
+                    value,
+                    metric_type.value,
+                    datetime.now().isoformat(),
+                    json.dumps(tags),
+                ),
             )
 
     def get_counter(self, name: str) -> float:
@@ -236,12 +252,12 @@ class MetricsCollector:
             if name_prefix:
                 cursor = conn.execute(
                     "SELECT * FROM metrics WHERE timestamp >= ? AND name LIKE ? ORDER BY timestamp",
-                    (since.isoformat(), f"{name_prefix}%")
+                    (since.isoformat(), f"{name_prefix}%"),
                 )
             else:
                 cursor = conn.execute(
                     "SELECT * FROM metrics WHERE timestamp >= ? ORDER BY timestamp",
-                    (since.isoformat(),)
+                    (since.isoformat(),),
                 )
 
             return [
@@ -277,6 +293,7 @@ class AlertManager:
             self._db_path = state_dir / "alerts.db"
         else:
             from src.core.config import get_config_manager
+
             self._db_path = get_config_manager().state_dir / "alerts.db"
 
         self._listeners: List[Callable[[Alert], None]] = []
@@ -313,6 +330,7 @@ class AlertManager:
     ) -> Alert:
         """Fire an alert."""
         import uuid
+
         alert = Alert(
             id=uuid.uuid4().hex[:8],
             name=name,
@@ -325,8 +343,15 @@ class AlertManager:
         with sqlite3.connect(self._db_path) as conn:
             conn.execute(
                 "INSERT INTO alerts (id, name, level, message, timestamp, acknowledged, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (alert.id, alert.name, alert.level.value, alert.message,
-                 alert.timestamp.isoformat(), 0, json.dumps(alert.metadata))
+                (
+                    alert.id,
+                    alert.name,
+                    alert.level.value,
+                    alert.message,
+                    alert.timestamp.isoformat(),
+                    0,
+                    json.dumps(alert.metadata),
+                ),
             )
 
         # Notify listeners
@@ -334,17 +359,14 @@ class AlertManager:
             try:
                 listener(alert)
             except Exception as e:
-                print(f"Alert listener error: {e}")
+                logger.warning(f"Alert listener error: {e}")
 
         return alert
 
     def acknowledge(self, alert_id: str) -> bool:
         """Acknowledge an alert."""
         with sqlite3.connect(self._db_path) as conn:
-            cursor = conn.execute(
-                "UPDATE alerts SET acknowledged = 1 WHERE id = ?",
-                (alert_id,)
-            )
+            cursor = conn.execute("UPDATE alerts SET acknowledged = 1 WHERE id = ?", (alert_id,))
             return cursor.rowcount > 0
 
     def get_active_alerts(self, limit: int = 50) -> List[Alert]:
@@ -353,7 +375,7 @@ class AlertManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 "SELECT * FROM alerts WHERE acknowledged = 0 ORDER BY timestamp DESC LIMIT ?",
-                (limit,)
+                (limit,),
             )
 
             return [
@@ -381,7 +403,7 @@ class AlertManager:
             conn.row_factory = sqlite3.Row
             cursor = conn.execute(
                 "SELECT * FROM alerts WHERE timestamp >= ? ORDER BY timestamp DESC LIMIT ?",
-                (since.isoformat(), limit)
+                (since.isoformat(), limit),
             )
 
             return [
@@ -454,15 +476,8 @@ class Monitor:
         template: str,
     ) -> None:
         """Record task execution metrics."""
-        self.metrics.increment(
-            "tasks_total",
-            tags={"status": "success" if success else "failed"}
-        )
-        self.metrics.observe(
-            "task_duration_seconds",
-            duration_seconds,
-            tags={"template": template}
-        )
+        self.metrics.increment("tasks_total", tags={"status": "success" if success else "failed"})
+        self.metrics.observe("task_duration_seconds", duration_seconds, tags={"template": template})
 
     def get_dashboard_data(self) -> Dict[str, Any]:
         """Get data for monitoring dashboard."""

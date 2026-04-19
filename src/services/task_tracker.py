@@ -12,7 +12,10 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import sqlite3
+
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
@@ -21,12 +24,14 @@ from typing import Any, Callable, Dict, List, Optional
 
 # Import from models
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.models.task import Task, TaskStatus, TaskPriority
 
 
 class TaskTrackerEvent(Enum):
     """Events emitted by TaskTracker."""
+
     TASK_CREATED = "task_created"
     TASK_STARTED = "task_started"
     TASK_PROGRESS = "task_progress"
@@ -40,6 +45,7 @@ class TaskTrackerEvent(Enum):
 @dataclass
 class TaskListener:
     """Callback registration for task events."""
+
     event: TaskTrackerEvent
     callback: Callable[[Task], None]
     filter_func: Optional[Callable[[Task], bool]] = None
@@ -68,6 +74,7 @@ class TaskTracker:
             self._db_path = state_dir / "tasks.db"
         else:
             from src.core.config import get_config_manager
+
             self._db_path = get_config_manager().state_dir / "tasks.db"
 
         # In-memory task cache
@@ -129,7 +136,7 @@ class TaskTracker:
                     try:
                         listener.callback(task)
                     except Exception as e:
-                        print(f"Task listener error: {e}")
+                        logger.warning(f"Task listener error: {e}")
 
     def add_listener(
         self,
@@ -138,11 +145,13 @@ class TaskTracker:
         filter_func: Optional[Callable[[Task], bool]] = None,
     ) -> None:
         """Register a listener for task events."""
-        self._listeners.append(TaskListener(
-            event=event,
-            callback=callback,
-            filter_func=filter_func,
-        ))
+        self._listeners.append(
+            TaskListener(
+                event=event,
+                callback=callback,
+                filter_func=filter_func,
+            )
+        )
 
     async def create_task(
         self,
@@ -287,10 +296,7 @@ class TaskTracker:
 
     async def get_running_tasks(self) -> List[Task]:
         """Get all currently running tasks."""
-        return [
-            t for t in self._tasks.values()
-            if t.status == TaskStatus.RUNNING
-        ]
+        return [t for t in self._tasks.values() if t.status == TaskStatus.RUNNING]
 
     async def _check_dependencies(self, task: Task) -> bool:
         """Check if all dependencies are satisfied."""
@@ -303,46 +309,52 @@ class TaskTracker:
     def _persist_task(self, task: Task) -> None:
         """Persist task to database."""
         with sqlite3.connect(self._db_path) as conn:
-            conn.execute("""
+            conn.execute(
+                """
                 INSERT OR REPLACE INTO tasks (
                     id, template_key, user_input, prompt, status, priority,
                     response, error, created_at, started_at, completed_at,
                     duration_seconds, max_retries, retry_count, depends_on, metadata
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                task.id,
-                task.template_key,
-                task.user_input,
-                task.prompt,
-                task.status.value,
-                task.priority.value,
-                task.response,
-                task.error,
-                task.created_at.isoformat(),
-                task.started_at.isoformat() if task.started_at else None,
-                task.completed_at.isoformat() if task.completed_at else None,
-                task.duration_seconds,
-                task.max_retries,
-                task.retry_count,
-                json.dumps(task.depends_on),
-                json.dumps(task.metadata),
-            ))
+            """,
+                (
+                    task.id,
+                    task.template_key,
+                    task.user_input,
+                    task.prompt,
+                    task.status.value,
+                    task.priority.value,
+                    task.response,
+                    task.error,
+                    task.created_at.isoformat(),
+                    task.started_at.isoformat() if task.started_at else None,
+                    task.completed_at.isoformat() if task.completed_at else None,
+                    task.duration_seconds,
+                    task.max_retries,
+                    task.retry_count,
+                    json.dumps(task.depends_on),
+                    json.dumps(task.metadata),
+                ),
+            )
 
     def _persist_events(self, task: Task) -> None:
         """Persist task events to database."""
         with sqlite3.connect(self._db_path) as conn:
             for event in task.events[-10:]:  # Only last 10 events
-                conn.execute("""
+                conn.execute(
+                    """
                     INSERT OR IGNORE INTO task_events (
                         task_id, timestamp, status, message, metadata
                     ) VALUES (?, ?, ?, ?, ?)
-                """, (
-                    task.id,
-                    event.timestamp.isoformat(),
-                    event.status.value,
-                    event.message,
-                    json.dumps(event.metadata),
-                ))
+                """,
+                    (
+                        task.id,
+                        event.timestamp.isoformat(),
+                        event.status.value,
+                        event.message,
+                        json.dumps(event.metadata),
+                    ),
+                )
 
     def _load_task(self, task_id: str) -> Optional[Task]:
         """Load task from database."""
@@ -388,19 +400,13 @@ class TaskTracker:
         """Get task statistics."""
         with sqlite3.connect(self._db_path) as conn:
             total = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
-            completed = conn.execute(
-                "SELECT COUNT(*) FROM tasks WHERE status = 'completed'"
-            ).fetchone()[0]
-            failed = conn.execute(
-                "SELECT COUNT(*) FROM tasks WHERE status = 'failed'"
-            ).fetchone()[0]
-            running = conn.execute(
-                "SELECT COUNT(*) FROM tasks WHERE status = 'running'"
-            ).fetchone()[0]
+            completed = conn.execute("SELECT COUNT(*) FROM tasks WHERE status = 'completed'").fetchone()[0]
+            failed = conn.execute("SELECT COUNT(*) FROM tasks WHERE status = 'failed'").fetchone()[0]
+            running = conn.execute("SELECT COUNT(*) FROM tasks WHERE status = 'running'").fetchone()[0]
 
-            avg_duration = conn.execute(
-                "SELECT AVG(duration_seconds) FROM tasks WHERE status = 'completed'"
-            ).fetchone()[0] or 0
+            avg_duration = (
+                conn.execute("SELECT AVG(duration_seconds) FROM tasks WHERE status = 'completed'").fetchone()[0] or 0
+            )
 
             return {
                 "total_tasks": total,

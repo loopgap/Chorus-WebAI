@@ -22,6 +22,7 @@ V = TypeVar("V")
 @dataclass
 class CacheEntry(Generic[V]):
     """Represents a cached value with metadata."""
+
     value: V
     created_at: float = field(default_factory=time.time)
     expires_at: Optional[float] = None
@@ -132,10 +133,7 @@ class LRUCache(Generic[K, V]):
     def cleanup_expired(self) -> int:
         """Remove all expired entries. Returns count removed."""
         with self._lock:
-            expired_keys = [
-                k for k, v in self._cache.items()
-                if v.is_expired()
-            ]
+            expired_keys = [k for k, v in self._cache.items() if v.is_expired()]
             for key in expired_keys:
                 del self._cache[key]
             return len(expired_keys)
@@ -182,6 +180,7 @@ def cache_result(
         def expensive_computation(n):
             return sum(range(n))
     """
+
     def decorator(func: Callable[T]) -> Callable[T]:
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -203,6 +202,7 @@ def cache_result(
             return result
 
         return wrapper  # type: ignore
+
     return decorator
 
 
@@ -215,13 +215,14 @@ def cached(key: str = "", ttl: Optional[float] = None) -> Any:
         if result is None:
             result = compute_expensive()
             cached_set("my_key", result, ttl=60)
-    
+
     Can also be used as a decorator with key parameter.
     """
     # If used as decorator without calling, key will be the function
     if callable(key):
         # Direct decoration without arguments: @cached
         func = key
+
         @functools.wraps(func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             cache_key = hashlib.md5(f"{func.__name__}|{repr(args)}|{repr(sorted(kwargs.items()))}".encode()).hexdigest()
@@ -231,8 +232,9 @@ def cached(key: str = "", ttl: Optional[float] = None) -> Any:
             result = func(*args, **kwargs)
             _function_cache.set(cache_key, result, ttl=300)
             return result
+
         return wrapper
-    
+
     return _function_cache.get(key)
 
 

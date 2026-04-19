@@ -9,6 +9,7 @@ import pytest
 from pathlib import Path
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.services.workflow import (
@@ -58,7 +59,7 @@ def simple_workflow():
 def test_register_workflow(engine, simple_workflow):
     """Test workflow registration."""
     engine.register_workflow(simple_workflow)
-    
+
     retrieved = engine.get_workflow(simple_workflow.id)
     assert retrieved is not None
     assert retrieved.name == "Test Workflow"
@@ -67,7 +68,7 @@ def test_register_workflow(engine, simple_workflow):
 def test_list_workflows(engine, simple_workflow):
     """Test listing workflows."""
     engine.register_workflow(simple_workflow)
-    
+
     workflows = engine.list_workflows()
     assert len(workflows) >= 1
     assert any(w.id == simple_workflow.id for w in workflows)
@@ -76,7 +77,7 @@ def test_list_workflows(engine, simple_workflow):
 def test_topological_order(simple_workflow):
     """Test topological ordering of steps."""
     steps = simple_workflow.topological_order()
-    
+
     # step1 should come before step2
     step_ids = [s.id for s in steps]
     assert step_ids.index("step1") < step_ids.index("step2")
@@ -85,13 +86,14 @@ def test_topological_order(simple_workflow):
 def test_get_entry_steps(simple_workflow):
     """Test getting entry steps."""
     entry = simple_workflow.get_entry_steps()
-    
+
     assert len(entry) == 1
     assert entry[0].id == "step1"
 
 
 def test_execute_workflow(engine, simple_workflow):
     """Test workflow execution."""
+
     # Create a mock executor
     async def mock_executor(task: Task):
         return f"Executed: {task.prompt}"
@@ -104,7 +106,7 @@ def test_execute_workflow(engine, simple_workflow):
         return execution
 
     execution = asyncio.run(run())
-    
+
     assert execution.state.value == "completed"
     assert "step1" in execution.step_results
     assert "step2" in execution.step_results
@@ -129,13 +131,14 @@ def test_delay_step(engine):
 
     async def run():
         import time
+
         start = time.time()
         execution = await engine.execute(workflow.id)
         elapsed = time.time() - start
         return execution, elapsed
 
     execution, elapsed = asyncio.run(run())
-    
+
     assert execution.state.value == "completed"
     assert elapsed >= 0.1  # Should have waited at least 0.1 seconds
 
@@ -145,7 +148,7 @@ def test_predefined_workflows():
     summary = create_summary_workflow()
     assert summary.name == "Summary Workflow"
     assert len(summary.steps) == 2
-    
+
     translation = create_translation_workflow()
     assert translation.name == "Translation Workflow"
     assert len(translation.steps) == 2

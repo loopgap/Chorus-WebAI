@@ -9,6 +9,7 @@ import pytest
 from pathlib import Path
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.services.task_tracker import TaskTracker, TaskTrackerEvent
@@ -23,6 +24,7 @@ def tracker(tmp_path):
 
 def test_create_task(tracker):
     """Test task creation."""
+
     async def run():
         task = await tracker.create_task(
             template_key="summary",
@@ -38,6 +40,7 @@ def test_create_task(tracker):
 
 def test_task_lifecycle(tracker):
     """Test complete task lifecycle."""
+
     async def run():
         # Create
         task = await tracker.create_task(user_input="Test")
@@ -61,6 +64,7 @@ def test_task_lifecycle(tracker):
 
 def test_task_failure_with_retry(tracker):
     """Test task failure and retry logic."""
+
     async def run():
         task = await tracker.create_task(user_input="Test", max_retries=2)
         await tracker.start_task(task.id)
@@ -93,6 +97,7 @@ def test_task_failure_with_retry(tracker):
 
 def test_task_cancellation(tracker):
     """Test task cancellation."""
+
     async def run():
         task = await tracker.create_task(user_input="Test")
         await tracker.cancel_task(task.id, "User requested")
@@ -105,6 +110,7 @@ def test_task_cancellation(tracker):
 
 def test_statistics(tracker):
     """Test task statistics."""
+
     async def run():
         # Create and complete some tasks
         for i in range(3):
@@ -121,7 +127,7 @@ def test_statistics(tracker):
         assert stats["total_tasks"] == 3
         assert stats["completed"] == 2
         assert stats["failed"] == 1
-        assert stats["success_rate"] == 2/3
+        assert stats["success_rate"] == 2 / 3
 
     asyncio.run(run())
 
@@ -147,14 +153,12 @@ def test_event_listeners(tracker):
 
 def test_get_pending_tasks(tracker):
     """Test getting pending tasks."""
+
     async def run():
         # Create multiple tasks with different priorities
         for i in range(3):
             priority = TaskPriority.HIGH if i == 0 else TaskPriority.NORMAL
-            await tracker.create_task(
-                user_input=f"Test {i}",
-                priority=priority
-            )
+            await tracker.create_task(user_input=f"Test {i}", priority=priority)
 
         pending = await tracker.get_pending_tasks()
         assert len(pending) == 3

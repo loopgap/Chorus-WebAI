@@ -26,16 +26,24 @@ pytest
 # 指定测试文件
 pytest tests/test_workflow.py
 
-# 性能检查
+# 性能检查（Gradio 懒加载优化后的启动性能基准）
 python perf_check.py
 ```
 
+> **注意**: `perf_check.py` 测量 `import web_app` 和 `build_ui` 耗时。由于 Gradio 采用懒加载优化（`import gradio` 在 `build_ui()` 函数内部），UI 构建时间包含 Gradio 导入时间。
+
 ## 3. 关键目录
 
-- `src/core/`: 配置、异常、浏览器管理、服务依赖。
-- `src/services/`: 工作流、任务追踪、记忆存储、监控。
+- `src/core/`: 配置（config.py）、会话管理（session.py）、异常、浏览器管理、服务依赖。
+- `src/core/auth/`: 认证相关模块。
+- `src/core/browser/`: 浏览器子模块。
+- `src/core/resilience/`: 弹性机制（重试、熔断等）。
+- `src/core/security/`: 安全相关模块。
+- `src/services/`: 工作流、任务追踪、记忆存储、监控、队列。
 - `src/models/`: Task、Session、History 等模型。
 - `src/ui/`: Gradio 页面组装与 Tab 业务逻辑。
+- `src/ui/components/`: UI 组件（CSS、选择器、HTML 片段）。
+- `src/ui/handlers/`: UI 事件处理器。
 - `tests/`: 单元测试与集成测试。
 
 ## 4. 开发约定

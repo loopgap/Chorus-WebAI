@@ -19,7 +19,6 @@ from src.services.memory_store import MemoryStore, SessionManager
 from src.services.workflow import WorkflowEngine
 from src.services.monitor import Monitor
 
-
 # Global service instances and their initialization locks
 _task_tracker: Optional[TaskTracker] = None
 _memory_store: Optional[MemoryStore] = None

@@ -1,0 +1,166 @@
+{
+  "en": {
+    "errors": {
+      "jwt_secret_required": "JWT secret key required",
+      "invalid_credentials": "Invalid username or password",
+      "account_disabled": "User account is disabled",
+      "account_locked": "Account is locked due to too many failed login attempts",
+      "login_attempts_remaining": "Warning: {remaining} login attempts remaining before account lockout",
+      "token_revoked": "Token has been revoked",
+      "invalid_token_type": "Invalid token type",
+      "token_expired": "Token has expired",
+      "invalid_token": "Invalid token: {error}",
+      "permission_denied": "Permission denied: {role} requires {permission}",
+      "session_not_found": "Session not found",
+      "session_expired": "Session has expired",
+      "invalid_reset_token": "Invalid password reset token",
+      "reset_token_expired": "Password reset token has expired",
+
+      "config_corrupted": "Configuration file is corrupted: {error}",
+      "config_load_failed": "Failed to load configuration from {path}: {error}",
+
+      "browser_context_none": "Browser context is None after launch",
+      "browser_page_creation_failed": "Failed to create page in browser context",
+      "browser_page_unavailable": "Browser page is unavailable",
+      "no_navigation_url": "No navigation URL specified",
+      "browser_init_failed": "Failed to initialize browser state: {error}",
+      "browser_page_init_failed": "Failed to initialize page in session context",
+      "navigation_failed": "Navigation failed for {url}: {error}",
+
+      "browser_launch_timeout": "Browser launch timeout (30s)",
+      "no_available_browser": "No available browser in pool (timeout: {timeout}s)",
+      "browser_verification_failed": "Browser verification failed: {error}",
+
+      "unknown_validation_rule": "Unknown validation rule: {rule}",
+      "field_required": "Field '{field}' is required",
+      "field_type_mismatch": "Field '{field}': expected {expected}, got {actual}",
+      "field_too_short": "Field '{field}': too short (min {min}, got {actual})",
+      "field_too_long": "Field '{field}': too long (max {max}, got {actual})",
+      "field_invalid_format": "Field '{field}': invalid format (pattern: {pattern})",
+      "field_invalid_characters": "Field '{field}': invalid characters ({characters})",
+      "field_forbidden_keyword": "Field '{field}': contains forbidden keyword '{keyword}'",
+      "field_custom_error": "Field '{field}': {error}",
+      "field_validation_error": "Field '{field}': validation error: {error}",
+      "template_formatting_error": "Template formatting error: {error}",
+
+      "workflow_not_found": "Workflow not found: {workflow_id}",
+      "dependency_not_executed": "Dependency {dep_id} not yet executed",
+      "no_task_executor": "No task executor registered",
+
+      "message_add_failed": "Failed to add message to session {session_id}",
+
+      "chat_input_not_found": "Chat input not found. You may need to login again or update selectors.",
+      "canceled_by_user": "Canceled by user before send.",
+      "task_failed_debug": "Task failed. Debug file: {path}",
+      "unknown_error": "Unknown error",
+      "timed_out_waiting_response": "Timed out while waiting for response.",
+
+      "login_not_detected": "Not detected login session. Please click 'Open Login Browser' first.",
+      "login_check_failed": "Login check failed. Please re-open login browser to confirm page status.",
+      "login_check_passed": "Login check passed. Session has been persisted.",
+      "browser_open_failed": "Failed to open browser. Please run '.venv\\Scripts\\python.exe -m playwright install chromium' then retry. Error: {error}",
+      "no_chat_input_detected": "Chat input box not detected. Please re-open login browser to confirm page status.",
+
+      "smoke_test_confirm_required": "Please check the smoke test confirmation checkbox before executing.",
+      "smoke_test_success": "Smoke test successful. Time: {elapsed}s. Response: {response}",
+      "smoke_test_failed": "Smoke test failed. Time: {elapsed}s. Error: {error}",
+
+      "config_saved": "Configuration saved.",
+      "platform_switched": "Platform switched to {label}.",
+
+      "task_canceled_empty_input": "Task canceled. Input is empty.",
+      "confirm_before_send": "Please check 'I confirm send' before executing.",
+      "execution_success": "Execution successful. Time: {elapsed}s. Response: {chars} chars.",
+      "execution_failed": "Execution failed. Time: {elapsed}s. Error: {error}",
+
+      "history_cleared": "History cleared.",
+      "no_error_logs": "No error logs available. Directory: {dir}",
+      "read_failed": "Read failed. {error}",
+
+      "export_no_result": "No result to export. Please execute a task first.",
+      "export_success": "Export complete. Files: {txt_name} and {md_name}."
+    }
+  },
+  "zh": {
+    "errors": {
+      "jwt_secret_required": "JWT密钥是必需的",
+      "invalid_credentials": "用户名或密码无效",
+      "account_disabled": "用户账户已被禁用",
+      "account_locked": "由于登录失败次数过多，账户已被锁定",
+      "login_attempts_remaining": "警告：还剩 {remaining} 次登录尝试机会，之后账户将被锁定",
+      "token_revoked": "令牌已被撤销",
+      "invalid_token_type": "无效的令牌类型",
+      "token_expired": "令牌已过期",
+      "invalid_token": "无效的令牌: {error}",
+      "permission_denied": "权限被拒绝: {role} 需要 {permission}",
+      "session_not_found": "会话未找到",
+      "session_expired": "会话已过期",
+      "invalid_reset_token": "无效的密码重置令牌",
+      "reset_token_expired": "密码重置令牌已过期",
+
+      "config_corrupted": "配置文件已损坏: {error}",
+      "config_load_failed": "从 {path} 加载配置失败: {error}",
+
+      "browser_context_none": "启动后浏览器上下文为空",
+      "browser_page_creation_failed": "在浏览器上下文中创建页面失败",
+      "browser_page_unavailable": "浏览器页面不可用",
+      "no_navigation_url": "未指定导航URL",
+      "browser_init_failed": "初始化浏览器状态失败: {error}",
+      "browser_page_init_failed": "在会话上下文中初始化页面失败",
+      "navigation_failed": "导航到 {url} 失败: {error}",
+
+      "browser_launch_timeout": "浏览器启动超时 (30秒)",
+      "no_available_browser": "池中没有可用的浏览器 (超时: {timeout}秒)",
+      "browser_verification_failed": "浏览器验证失败: {error}",
+
+      "unknown_validation_rule": "未知的验证规则: {rule}",
+      "field_required": "字段 '{field}' 是必填的",
+      "field_type_mismatch": "字段 '{field}': 期望 {expected}, 实际为 {actual}",
+      "field_too_short": "字段 '{field}': 太短 (最小 {min}, 实际为 {actual})",
+      "field_too_long": "字段 '{field}': 太长 (最大 {max}, 实际为 {actual})",
+      "field_invalid_format": "字段 '{field}': 格式无效 (模式: {pattern})",
+      "field_invalid_characters": "字段 '{field}': 包含无效字符 ({characters})",
+      "field_forbidden_keyword": "字段 '{field}': 包含禁用关键词 '{keyword}'",
+      "field_custom_error": "字段 '{field}': {error}",
+      "field_validation_error": "字段 '{field}': 验证错误: {error}",
+      "template_formatting_error": "模板格式化错误: {error}",
+
+      "workflow_not_found": "未找到工作流: {workflow_id}",
+      "dependency_not_executed": "依赖项 {dep_id} 尚未执行",
+      "no_task_executor": "未注册任务执行器",
+
+      "message_add_failed": "向会话 {session_id} 添加消息失败",
+
+      "chat_input_not_found": "未找到聊天输入框。您可能需要重新登录或更新选择器。",
+      "canceled_by_user": "发送前被用户取消。",
+      "task_failed_debug": "任务失败。调试文件: {path}",
+      "unknown_error": "未知错误",
+      "timed_out_waiting_response": "等待响应超时。",
+
+      "login_not_detected": "未检测到登录会话。请先点击'打开登录浏览器'。",
+      "login_check_failed": "登录检查失败。请重新打开登录浏览器确认页面状态。",
+      "login_check_passed": "登录检查通过。会话已持久化保存。",
+      "browser_open_failed": "打开浏览器失败。请先执行 .venv\\Scripts\\python.exe -m playwright install chromium 然后重试。错误: {error}",
+      "no_chat_input_detected": "未检测到聊天输入框。请重新打开登录浏览器确认页面状态。",
+
+      "smoke_test_confirm_required": "请先勾选冒烟测试确认后再执行。",
+      "smoke_test_success": "冒烟测试成功。用时 {elapsed} 秒。返回: {response}",
+      "smoke_test_failed": "冒烟测试失败。用时 {elapsed} 秒。错误: {error}",
+
+      "config_saved": "配置已保存。",
+      "platform_switched": "已切换平台 {label}。",
+
+      "task_canceled_empty_input": "任务已取消。输入为空。",
+      "confirm_before_send": "请先勾选'我确认发送'后再执行。",
+      "execution_success": "执行成功。用时 {elapsed} 秒。返回 {chars} 字。",
+      "execution_failed": "执行失败。用时 {elapsed} 秒。错误: {error}",
+
+      "history_cleared": "历史记录已清空。",
+      "no_error_logs": "暂无错误日志。目录: {dir}",
+      "read_failed": "读取失败。{error}",
+
+      "export_no_result": "没有可导出的结果。请先执行任务。",
+      "export_success": "导出完成。文件: {txt_name} 和 {md_name}。"
+    }
+  }
+}

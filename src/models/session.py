@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 class SessionState(Enum):
     """Session lifecycle states."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     ARCHIVED = "archived"
@@ -24,6 +25,7 @@ class SessionState(Enum):
 @dataclass
 class Message:
     """Represents a single message in a session."""
+
     role: str  # "user" or "assistant"
     content: str
     timestamp: datetime = field(default_factory=datetime.now)
@@ -42,7 +44,7 @@ class Message:
         return cls(
             role=data["role"],
             content=data["content"],
-            timestamp=datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else datetime.now(),
+            timestamp=(datetime.fromisoformat(data["timestamp"]) if data.get("timestamp") else datetime.now()),
             metadata=data.get("metadata", {}),
         )
 
@@ -153,7 +155,7 @@ class Session:
             "summary": self.summary,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
-            "last_message_at": self.last_message_at.isoformat() if self.last_message_at else None,
+            "last_message_at": (self.last_message_at.isoformat() if self.last_message_at else None),
             "metadata": self.metadata,
         }
 

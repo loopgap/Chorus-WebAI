@@ -61,7 +61,9 @@ class BrowserManager:
 
         try:
             if preferred_channel:
-                self._context = await playwright.chromium.launch_persistent_context(channel=preferred_channel, **launch_kwargs)
+                self._context = await playwright.chromium.launch_persistent_context(
+                    channel=preferred_channel, **launch_kwargs
+                )
             else:
                 self._context = await playwright.chromium.launch_persistent_context(**launch_kwargs)
         except Exception:

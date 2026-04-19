@@ -27,7 +27,8 @@
 
 ### 2.1 `src/core`
 
-- `config.py`: 全局配置读写与默认值。
+- `config.py`: 全局配置管理（ConfigManager 单例，支持环境变量覆盖、Provider 配置、动态监听）。
+- `session.py`: 登录会话状态与最后输入状态管理（SessionManager 单例）。
 - `exceptions.py`: 统一异常体系（ConfigError、BrowserError、TaskError）。
 - `browser.py`: Playwright 浏览器会话管理。
 - `dependencies.py`: 服务单例注册与获取入口。
@@ -73,7 +74,21 @@
 - `.semi_agent/*.db`: 任务、记忆、监控相关 SQLite 数据。
 - `.semi_agent/history.jsonl`: 历史记录。
 
-## 5. 当前架构特征
+## 5. Gradio UI 懒加载
+
+Web UI (`web_app.py`) 采用 Gradio 懒加载优化：
+- `gradio` 模块在 `build_ui()` 函数内部导入，不在模块级别导入
+- 这使得 `perf_check.py` 能准确测量 UI 构建性能
+- 首次 import 耗时从原本计入启动时间改为计入 `build_ui_seconds`
+
+## 6. 性能基准测试
+
+`perf_check.py` 提供启动性能基准测试：
+- 测量 `import web_app`、`build_ui`、`build_guide`、`build_api_doc`、`history_table` 等关键步骤耗时
+- CI 环境有 5x 时间限制倍数
+- 用于防止启动性能退化
+
+## 7. 当前架构特征
 
 - 优点: 模块边界清晰，服务职责明确，便于扩展。
 - 注意点: 仍以单进程单例服务为主，不是远程微服务部署架构。

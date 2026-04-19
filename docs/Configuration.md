@@ -34,4 +34,31 @@ export SHADOW_TARGET_URL="https://kimi.moonshot.cn/"
 
 ---
 
+## 2. Provider 配置
+
+内置支持多个 AI 平台，通过 `ConfigManager.get_provider()` 获取：
+
+| Provider | URL | 发送方式 | 说明 |
+| :--- | :--- | :--- | :--- |
+| deepseek | https://chat.deepseek.com/ | 回车 | 建议开启'回车发送' |
+| kimi | https://kimi.moonshot.cn/ | 回车 | 长文本分析效果好 |
+| tongyi | https://tongyi.aliyun.com/ | 点击按钮 | 通义建议使用'点击按钮'模式 |
+
+---
+
+## 3. 状态目录结构
+
+`ConfigManager` 自动管理以下目录（`.semi_agent/` 下）：
+
+| 目录 | 说明 |
+| :--- | :--- |
+| `config.json` | 运行配置 |
+| `browser_profile/` | 浏览器登录状态 |
+| `errors/` | 错误日志 |
+| `history.jsonl` | 历史记录 |
+| `exports/` | 导出文件 |
+| `docs/` | 接口文档 |
+
+---
+
 [返回文档中心](Home.md)

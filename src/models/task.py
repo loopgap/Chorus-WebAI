@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional
 
 class TaskStatus(Enum):
     """Task lifecycle states."""
+
     PENDING = "pending"
     QUEUED = "queued"
     RUNNING = "running"
@@ -34,6 +35,7 @@ class TaskStatus(Enum):
 
 class TaskPriority(Enum):
     """Task priority levels."""
+
     LOW = 1
     NORMAL = 5
     HIGH = 10
@@ -43,6 +45,7 @@ class TaskPriority(Enum):
 @dataclass
 class TaskEvent:
     """Represents an event in the task lifecycle."""
+
     timestamp: datetime = field(default_factory=datetime.now)
     status: TaskStatus = TaskStatus.PENDING
     message: str = ""
@@ -107,10 +110,12 @@ class Task:
     def __post_init__(self) -> None:
         """Record creation event."""
         if not self.events:
-            self.events.append(TaskEvent(
-                status=TaskStatus.PENDING,
-                message="Task created",
-            ))
+            self.events.append(
+                TaskEvent(
+                    status=TaskStatus.PENDING,
+                    message="Task created",
+                )
+            )
 
     def add_event(
         self,
@@ -119,11 +124,13 @@ class Task:
         **metadata: Any,
     ) -> None:
         """Add a lifecycle event."""
-        self.events.append(TaskEvent(
-            status=status,
-            message=message,
-            metadata=metadata,
-        ))
+        self.events.append(
+            TaskEvent(
+                status=status,
+                message=message,
+                metadata=metadata,
+            )
+        )
 
     def start(self) -> None:
         """Mark task as started."""
@@ -150,7 +157,11 @@ class Task:
         if self.retry_count < self.max_retries:
             self.status = TaskStatus.RETRYING
             self.retry_count += 1
-            self.add_event(TaskStatus.RETRYING, f"Task failed, retry {self.retry_count}/{self.max_retries}", error=error)
+            self.add_event(
+                TaskStatus.RETRYING,
+                f"Task failed, retry {self.retry_count}/{self.max_retries}",
+                error=error,
+            )
         else:
             self.status = TaskStatus.FAILED
             self.add_event(TaskStatus.FAILED, "Task failed permanently", error=error)
@@ -197,7 +208,7 @@ class Task:
             "error": self.error,
             "created_at": self.created_at.isoformat(),
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "duration_seconds": self.duration_seconds,
             "retry_count": self.retry_count,
             "depends_on": self.depends_on,

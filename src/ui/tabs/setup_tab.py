@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import functools
 import os
 import signal
 import time
@@ -14,15 +15,24 @@ from typing import Any, Dict, Tuple
 
 import main as core
 from src.ui.state import (
-    PROVIDERS, PROVIDER_LABEL_TO_KEY, LOGIN_STATE,
+    PROVIDERS,
+    PROVIDER_LABEL_TO_KEY,
+    LOGIN_STATE,
     get_login_lock,
 )
 
+
+@functools.lru_cache(maxsize=16)
+def _provider_label_from_config_cached(provider_key: str) -> str:
+    """Cached lookup of provider label from provider key."""
+    if provider_key in PROVIDERS:
+        return PROVIDERS[provider_key]["label"]
+    return PROVIDERS["deepseek"]["label"]
+
+
 def _provider_label_from_config(cfg: Dict[str, Any]) -> str:
     key = str(cfg.get("provider_key", "deepseek")).strip()
-    if key in PROVIDERS:
-        return PROVIDERS[key]["label"]
-    return PROVIDERS["deepseek"]["label"]
+    return _provider_label_from_config_cached(key)
 
 
 def _provider_guide_text(provider_label: str) -> str:
@@ -36,6 +46,7 @@ def _provider_guide_text(provider_label: str) -> str:
             f"操作建议 {item['guide']}",
         ]
     )
+
 
 def _profile_has_login_data() -> bool:
     try:
@@ -77,8 +88,10 @@ def build_guide_markdown() -> str:
         ]
     )
 
+
 def load_config_for_form() -> Tuple[str, str, str, bool, int, int, str, str, str, str]:
     from src.ui.tabs.help_tab import build_api_doc_text
+
     cfg = core.load_config()
     provider_label = _provider_label_from_config(cfg)
     status = f"已加载配置 URL {cfg['target_url']} 重试 {cfg['max_retries']} 超时 {cfg['response_timeout_seconds']} 秒"
@@ -99,7 +112,12 @@ def load_config_for_form() -> Tuple[str, str, str, bool, int, int, str, str, str
 def apply_provider(provider_label: str) -> Tuple[str, str, str, str]:
     key = PROVIDER_LABEL_TO_KEY.get(provider_label, "deepseek")
     item = PROVIDERS[key]
-    return item["url"], item["send_mode"], _provider_guide_text(provider_label), f"已切换平台 {item['label']}"
+    return (
+        item["url"],
+        item["send_mode"],
+        _provider_guide_text(provider_label),
+        f"已切换平台 {item['label']}",
+    )
 
 
 def save_config_from_form(
@@ -162,12 +180,14 @@ async def open_login_browser() -> Tuple[str, str]:
                 return "登录浏览器已打开 请在该窗口完成登录", build_guide_markdown()
             p, context, page = await core.open_chat_page(cfg)
             LOGIN_STATE.update({"p": p, "context": context, "page": page})
-        return "已打开登录浏览器 请登录后回到本页面点击 登录完成检查", build_guide_markdown()
+        return (
+            "已打开登录浏览器 请登录后回到本页面点击 登录完成检查",
+            build_guide_markdown(),
+        )
     except Exception as exc:
         await close_login_session()
         return (
-            "打开浏览器失败 请先执行 .venv\\Scripts\\python.exe -m playwright install chromium 然后重试 错误 "
-            f"{exc}",
+            f"打开浏览器失败 请先执行 .venv\\Scripts\\python.exe -m playwright install chromium 然后重试 错误 {exc}",
             build_guide_markdown(),
         )
 
@@ -214,7 +234,10 @@ async def run_smoke_test(smoke_confirm: bool, smoke_pause_seconds: int) -> Tuple
                 "ok": True,
             }
         )
-        return f"冒烟测试成功 用时 {elapsed} 秒 返回 {result[:120]}", build_guide_markdown()
+        return (
+            f"冒烟测试成功 用时 {elapsed} 秒 返回 {result[:120]}",
+            build_guide_markdown(),
+        )
     except Exception as exc:
         elapsed = round(time.time() - started, 2)
         core.append_history(

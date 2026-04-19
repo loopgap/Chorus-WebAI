@@ -19,12 +19,15 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import uuid
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.models.task import Task
+from src.utils.i18n import t
 
 
 class StepType(Enum):
     """Types of workflow steps."""
+
     TASK = "task"
     CONDITION = "condition"
     PARALLEL = "parallel"
@@ -33,6 +36,7 @@ class StepType(Enum):
 
 class WorkflowState(Enum):
     """Workflow execution states."""
+
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -59,6 +63,7 @@ class WorkflowStep:
         parallel_steps: Sub-steps for PARALLEL type
         metadata: Additional metadata
     """
+
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = ""
     step_type: StepType = StepType.TASK
@@ -86,6 +91,7 @@ class WorkflowDefinition:
         version: Workflow version
         metadata: Additional metadata
     """
+
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
     name: str = ""
     description: str = ""
@@ -130,6 +136,7 @@ class WorkflowDefinition:
 @dataclass
 class WorkflowExecution:
     """Tracks the execution state of a workflow."""
+
     id: str = field(default_factory=lambda: uuid.uuid4().hex[:8])
     workflow_id: str = ""
     state: WorkflowState = WorkflowState.PENDING
@@ -145,7 +152,7 @@ class WorkflowExecution:
             "workflow_id": self.workflow_id,
             "state": self.state.value,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "completed_at": (self.completed_at.isoformat() if self.completed_at else None),
             "step_results": self.step_results,
             "step_tasks": self.step_tasks,
             "error": self.error,
@@ -167,7 +174,7 @@ class WorkflowEngine:
         self._workflows: Dict[str, WorkflowDefinition] = {}
         self._executions: Dict[str, WorkflowExecution] = {}
         self._task_executor: Optional[Callable] = None
-        
+
         # Register default board workflows
         self.register_workflow(create_startup_review_workflow())
         self.register_workflow(create_tech_decision_workflow())
@@ -210,7 +217,7 @@ class WorkflowEngine:
         """
         workflow = self.get_workflow(workflow_id)
         if not workflow:
-            raise ValueError(f"Workflow not found: {workflow_id}")
+            raise ValueError(t("errors.workflow_not_found", workflow_id=workflow_id))
 
         execution = WorkflowExecution(
             workflow_id=workflow_id,
@@ -224,9 +231,7 @@ class WorkflowEngine:
         try:
             # Execute steps in topological order
             for step in workflow.topological_order():
-                result = await self._execute_step(
-                    step, execution, context, workflow
-                )
+                result = await self._execute_step(step, execution, context, workflow)
                 execution.step_results[step.id] = result
 
             execution.state = WorkflowState.COMPLETED
@@ -249,7 +254,7 @@ class WorkflowEngine:
         # Check dependencies
         for dep_id in step.depends_on:
             if dep_id not in execution.step_results:
-                raise RuntimeError(f"Dependency {dep_id} not yet executed")
+                raise RuntimeError(t("errors.dependency_not_executed", dep_id=dep_id))
 
         # Get previous result
         prev_result = ""
@@ -264,14 +269,10 @@ class WorkflowEngine:
             return await self._execute_task_step(step, user_input, execution)
 
         elif step.step_type == StepType.CONDITION:
-            return await self._execute_condition_step(
-                step, execution, context, workflow
-            )
+            return await self._execute_condition_step(step, execution, context, workflow)
 
         elif step.step_type == StepType.PARALLEL:
-            return await self._execute_parallel_step(
-                step, execution, context, workflow
-            )
+            return await self._execute_parallel_step(step, execution, context, workflow)
 
         elif step.step_type == StepType.DELAY:
             await asyncio.sleep(step.delay_seconds)
@@ -287,7 +288,7 @@ class WorkflowEngine:
     ) -> Any:
         """Execute a task step."""
         if not self._task_executor:
-            raise RuntimeError("No task executor registered")
+            raise RuntimeError(t("errors.no_task_executor"))
 
         task = Task(
             template_key=step.template_key,
@@ -324,9 +325,7 @@ class WorkflowEngine:
         if next_step_id:
             next_step = workflow.get_step(next_step_id)
             if next_step:
-                return await self._execute_step(
-                    next_step, execution, context, workflow
-                )
+                return await self._execute_step(next_step, execution, context, workflow)
 
         return result
 
@@ -338,10 +337,7 @@ class WorkflowEngine:
         workflow: WorkflowDefinition,
     ) -> List[Any]:
         """Execute parallel steps."""
-        tasks = [
-            self._execute_step(s, execution, context.copy(), workflow)
-            for s in step.parallel_steps
-        ]
+        tasks = [self._execute_step(s, execution, context.copy(), workflow) for s in step.parallel_steps]
         return await asyncio.gather(*tasks, return_exceptions=True)
 
     def get_execution(self, execution_id: str) -> Optional[WorkflowExecution]:
@@ -350,10 +346,7 @@ class WorkflowEngine:
 
     def get_active_executions(self) -> List[WorkflowExecution]:
         """Get all active (running) executions."""
-        return [
-            e for e in self._executions.values()
-            if e.state == WorkflowState.RUNNING
-        ]
+        return [e for e in self._executions.values() if e.state == WorkflowState.RUNNING]
 
 
 # Predefined workflow templates

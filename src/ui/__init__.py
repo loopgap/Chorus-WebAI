@@ -5,8 +5,21 @@ ShadowBoard UI Package
 from __future__ import annotations
 
 import socket
-from src.ui.state import ensure_dirs, load_metadata, CUSTOM_CSS
-from src.ui.app import build_ui
+from src.ui.state import CUSTOM_CSS, ensure_dirs, load_metadata
+
+
+def _get_build_ui():
+    """Lazy import for build_ui to avoid loading gradio at package import time."""
+    from src.ui.app import build_ui
+
+    return build_ui
+
+
+def __getattr__(name: str):
+    if name == "build_ui":
+        return _get_build_ui()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 def _pick_available_port(start: int = 7860, end: int = 7875) -> int:
     for port in range(start, end + 1):
@@ -16,20 +29,22 @@ def _pick_available_port(start: int = 7860, end: int = 7875) -> int:
                 return port
     raise RuntimeError(f"{start} 到 {end} 端口均被占用 请先关闭占用进程")
 
+
 def main() -> None:
     import gradio as gr
+
     ensure_dirs()
     # 确保元数据已加载，以便 build_ui 能正确渲染
     load_metadata()
-    
-    app = build_ui()
+
+    app = _get_build_ui()()
     app.queue(default_concurrency_limit=1)
     port = _pick_available_port(7860, 7875)
-    
+
     app.launch(
-        server_name="127.0.0.1", 
-        server_port=port, 
-        inbrowser=True, 
-        theme=gr.themes.Soft(), 
-        css=CUSTOM_CSS
+        server_name="127.0.0.1",
+        server_port=port,
+        inbrowser=True,
+        theme=gr.themes.Soft(),
+        css=CUSTOM_CSS,
     )

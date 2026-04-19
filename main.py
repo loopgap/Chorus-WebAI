@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import json
+import logging
 import sys
 import textwrap
 import asyncio
 import time
 import traceback
+
+logger = logging.getLogger(__name__)
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from playwright.async_api import TimeoutError as PlaywrightTimeoutError
 from playwright.async_api import async_playwright
+
+from src.utils.i18n import t
 
 ROOT = Path(__file__).resolve().parent
 STATE_DIR = ROOT / ".semi_agent"
@@ -49,18 +54,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "smoke_pause_seconds": 3,
 }
 
-TEMPLATES: Dict[str, str] = {
-    "market_analyst": "你现在是 ShadowBoard 的首席营销官 (CMO)。请从市场规模、竞争对手、用户痛点和增长潜力的角度，深度分析以下议案，并指出 3 个核心市场风险：\n\n{user_input}",
-    "tech_lead": "你现在是 ShadowBoard 的首席技术官 (CTO)。请评估以下议案的技术可行性、架构复杂度、潜在技术债以及所需的核心技术栈。如果涉及已有分析，请结合参考：\n\n{user_input}",
-    "finance_expert": "你现在是 ShadowBoard 的首席财务官 (CFO)。请对以下议案进行冷酷的成本收益分析，指出潜在的财务黑洞、盈利模式的漏洞以及资金链风险：\n\n{user_input}",
-    "risk_manager": "你现在是 ShadowBoard 的风险合规官。请针对以下议案及之前的专家意见，寻找法律、合规、隐私以及逻辑上的致命缺陷，进行红队测试：\n\n{user_input}",
-    "chairman_summary": "你现在是 ShadowBoard 的董事长。请阅读以下所有董事会成员的辩论记录，总结共识点与核心分歧，并最终给出一个明确的执行/否决/推迟建议，附带 3 条行动指令：\n\n{user_input}",
-    "summary": "Summarize the following content in 5 bullets:\n\n{user_input}",
-    "translation": "Translate the following text to Chinese and keep meaning precise:\n\n{user_input}",
-    "rewrite": "Rewrite the following text to be clear and professional:\n\n{user_input}",
-    "extract": "Extract key entities, dates, and action items from the following:\n\n{user_input}",
-    "qa": "Answer the request below with concise steps:\n\n{user_input}",
-}
+from src.core.templates import TEMPLATES
 
 
 def ensure_state() -> None:
@@ -87,7 +81,8 @@ def load_config() -> Dict[str, Any]:
         merged = DEFAULT_CONFIG.copy()
         merged.update(data)
         return merged
-    except Exception:
+    except Exception as exc:
+        logger.warning(f"Failed to merge config, using defaults: {exc}")
         save_config(DEFAULT_CONFIG)
         return DEFAULT_CONFIG.copy()
 
@@ -102,10 +97,19 @@ def append_history(entry: Dict[str, Any]) -> None:
 
 
 def read_history(limit: int = 10) -> List[Dict[str, Any]]:
+    """Read recent history entries with efficient reverse iteration.
+
+    Optimized to collect only limit entries, avoiding unnecessary parsing.
+    """
     if not HISTORY_PATH.exists():
         return []
-    lines = HISTORY_PATH.read_text(encoding="utf-8").splitlines()
     rows: List[Dict[str, Any]] = []
+
+    with HISTORY_PATH.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Use deque-like pattern: iterate in reverse and stop early
+    # This avoids parsing entries beyond the limit
     for line in reversed(lines):
         if not line.strip():
             continue
@@ -188,15 +192,17 @@ async def save_error_snapshot(page, error: Exception) -> Path:
     txt_path = ERROR_DIR / f"error_{ts}.txt"
     try:
         await page.screenshot(path=str(shot_path), full_page=True)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.error(f"Snapshot failed: {exc}")
     txt_path.write_text(
-        "\n".join([
-            f"time={datetime.now().isoformat()}",
-            f"error={type(error).__name__}: {error}",
-            "traceback:",
-            traceback.format_exc(),
-        ]),
+        "\n".join(
+            [
+                f"time={datetime.now().isoformat()}",
+                f"error={type(error).__name__}: {error}",
+                "traceback:",
+                traceback.format_exc(),
+            ]
+        ),
         encoding="utf-8",
     )
     return txt_path
@@ -210,7 +216,8 @@ async def wait_for_response(page, selectors: List[str], timeout_seconds: int, st
     while time.time() - start < timeout_seconds:
         try:
             current = await get_latest_response_text(page, selectors)
-        except Exception:
+        except Exception as exc:
+            logger.debug(f"Response wait failed: {exc}")
             current = ""
 
         if current and current != last:
@@ -223,7 +230,7 @@ async def wait_for_response(page, selectors: List[str], timeout_seconds: int, st
 
         await asyncio.sleep(1)
 
-    raise TimeoutError("Timed out while waiting for response.")
+    raise TimeoutError(t("errors.timed_out_waiting_response"))
 
 
 async def open_chat_page(config: Dict[str, Any]):
@@ -237,7 +244,8 @@ async def open_chat_page(config: Dict[str, Any]):
     if preferred_channel:
         try:
             context = await p.chromium.launch_persistent_context(channel=preferred_channel, **launch_kwargs)
-        except Exception:
+        except Exception as exc:
+            logger.warning(f"Failed to launch with channel {preferred_channel}, trying default: {exc}")
             context = await p.chromium.launch_persistent_context(**launch_kwargs)
     else:
         context = await p.chromium.launch_persistent_context(**launch_kwargs)
@@ -251,33 +259,36 @@ async def open_chat_page(config: Dict[str, Any]):
 
 
 async def first_login(config: Dict[str, Any]) -> None:
-    print("\nOpening browser for first login...")
+    logger.info("Opening browser for first login...")
     p, context, page = await open_chat_page(config)
     try:
         print("Please finish login in the browser.")
         input("After login and seeing chat input, press Enter here...")
         locator = await get_first_visible_locator(page, config["input_selectors"], timeout_ms=2500)
         if locator is None:
-            print("Login check warning: chat input not found yet. You can continue and test with a task.")
+            logger.warning("Login check warning: chat input not found yet. You can continue and test with a task.")
         else:
-            print("Login check passed. Session should be saved.")
+            logger.info("Login check passed. Session should be saved.")
     finally:
         await context.close()
         await p.stop()
 
 
 async def send_once(config: Dict[str, Any], prompt: str):
-    p, context, page = await open_chat_page(config)
+    p = None
+    context = None
+    page = None
     try:
+        p, context, page = await open_chat_page(config)
         input_box = await get_first_visible_locator(page, config["input_selectors"], timeout_ms=4000)
         if input_box is None:
-            raise RuntimeError("Chat input not found. You may need to login again or update selectors.")
+            raise RuntimeError(t("errors.chat_input_not_found"))
 
         await input_box.fill(prompt)
 
         if config.get("confirm_before_send", True):
             if not ask_bool("Ready to send this prompt?", default=True):
-                raise RuntimeError("Canceled by user before send.")
+                raise RuntimeError(t("errors.canceled_by_user"))
 
         if config.get("send_mode") == "button":
             send_btn = await get_first_visible_locator(page, config["send_button_selectors"], timeout_ms=1200)
@@ -296,11 +307,16 @@ async def send_once(config: Dict[str, Any], prompt: str):
         ):
             yield chunk
     except Exception as exc:
-        debug_path = save_error_snapshot(page, exc)
-        raise RuntimeError(f"Task failed. Debug file: {debug_path}") from exc
+        logger.debug(f"Send failed: {exc}")
+        if page is not None:
+            debug_path = await save_error_snapshot(page, exc)
+            raise RuntimeError(t("errors.task_failed_debug", path=debug_path)) from exc
+        raise
     finally:
-        await context.close()
-        await p.stop()
+        if context is not None:
+            await context.close()
+        if p is not None:
+            await p.stop()
 
 
 async def send_with_retry(config: Dict[str, Any], prompt: str):
@@ -315,10 +331,10 @@ async def send_with_retry(config: Dict[str, Any], prompt: str):
             return
         except Exception as exc:
             last_error = exc
-            print(f"Attempt {attempt}/{retries} failed: {exc}")
+            logger.debug(f"Attempt {attempt}/{retries} failed: {exc}")
             if attempt < retries:
                 wait_s = backoff * (2 ** (attempt - 1))
-                print(f"Retrying in {wait_s:.1f}s...")
+                logger.debug(f"Retrying in {wait_s:.1f}s...")
                 await asyncio.sleep(wait_s)
 
     raise RuntimeError(str(last_error) if last_error else "Unknown error")
@@ -330,22 +346,23 @@ async def run_task(config: Dict[str, Any]) -> None:
     template_key = keys[idx]
     user_input = collect_multiline("Enter your task content")
     if not user_input:
-        print("Empty input. Task canceled.")
+        logger.info("Empty input. Task canceled.")
         return
 
     final_prompt = build_prompt(template_key, user_input)
-    print("\nPrompt preview:")
-    print("-" * 70)
-    print(textwrap.shorten(final_prompt.replace("\n", " "), width=260, placeholder=" ..."))
-    print("-" * 70)
+    logger.info("Prompt preview:")
+    logger.info("-" * 70)
+    logger.info(textwrap.shorten(final_prompt.replace("\n", " "), width=260, placeholder=" ..."))
+    logger.info("-" * 70)
 
     started = time.time()
     print("\nResponse:\n")
     response = ""
     async for chunk in send_with_retry(config, final_prompt):
-        print(chunk[len(response):], end="", flush=True)
+        print(chunk[len(response) :], end="", flush=True)
         response = chunk
     print()
+    logger.info(f"Response complete, {len(response)} chars in {time.time() - started:.1f}s")
     elapsed = time.time() - started
 
     append_history(
@@ -430,9 +447,9 @@ async def quick_setup(config: Dict[str, Any]) -> Dict[str, Any]:
         result = ""
         async for chunk in send_with_retry(config, smoke_prompt):
             result = chunk
-        print(f"Smoke result: {result[:120]}")
+        logger.info(f"Smoke result: {result[:120]}")
     except Exception as exc:
-        print(f"Smoke test failed: {exc}")
+        logger.warning(f"Setup step failed: {exc}")
 
     save_config(config)
     return config
@@ -472,11 +489,12 @@ async def async_main() -> None:
         except KeyboardInterrupt:
             print("\nInterrupted by user.")
         except Exception as exc:
-            print(f"Error: {exc}")
+            logger.error(f"Error: {exc}")
 
 
 def main():
     asyncio.run(async_main())
+
 
 if __name__ == "__main__":
     try:
