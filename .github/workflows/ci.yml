@@ -37,3 +37,9 @@ jobs:
         run: |
           .venv\Scripts\Activate.ps1
           .\quality_gate.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Workarea Cleanup
+        if: always()
+        run: |
+          Get-ChildItem -Path . -Include __pycache__, .pytest_cache, .ruff_cache -Recurse | Remove-Item -Recurse -Force
