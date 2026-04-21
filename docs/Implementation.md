@@ -574,5 +574,40 @@ config = BrowserPoolConfig(acquire_timeout=60.0)
 
 ---
 
-**最后更新**: 2026-04-13  
-**版本**: 1.0 - 初始版本
+---
+
+## Phase 5: 监控、运维与故障排查
+
+### 5.1 异步架构运维 (Async Maintenance)
+
+本项目已全面迁移至 `aiosqlite` 异步存储。
+
+1. **数据库碎片清理**: 系统在 `initialize_services` 时会自动执行 `VACUUM`。若需手动执行：
+   ```python
+   await get_task_tracker().vacuum()
+   ```
+
+2. **错误快照自动清理**: 默认保留 7 天内的错误截图 (`.semi_agent/errors/`)。手动清理可运行：
+   ```powershell
+   # 清理 7 天前的文件
+   Get-ChildItem -Path .semi_agent/errors -File | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } | Remove-Item
+   ```
+
+### 5.2 浏览器资源管理
+
+强化版 `BrowserPool` 具备僵尸进程自愈能力。
+
+- **监控指标**: 通过“董事会报表”查看 `in_use` 与 `available` 比例。
+- **强制回收**: 若发现浏览器进程未正常退出，可运行 `scripts/workspace_prune.ps1` 进行深度清理。
+
+### 5.3 常见问题 (FAQ)
+
+- **Q: 为什么 CI 提示性能超时？**
+  - A: 远端运行环境较慢。`perf_check.py` 已设置 5x 倍率。若持续失败，请检查 `import` 路径是否发生循环引用。
+- **Q: 为什么 UI 探测在 CI 模式下跳过？**
+  - A: CI 环境无头模式可能无法访问外部 DeepSeek 等平台。探测失败时会自动跳过断言以避免阻塞构建。
+
+---
+
+**最后更新**: 2026-04-20
+**版本**: 3.5 - 性能优化与异步重构版

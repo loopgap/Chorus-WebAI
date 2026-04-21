@@ -46,7 +46,20 @@ python perf_check.py
 - `src/ui/handlers/`: UI 事件处理器。
 - `tests/`: 单元测试与集成测试。
 
-## 4. 开发约定
+## 4. 异步开发规范 (Async First)
+
+由于核心存储迁移至 `aiosqlite`，开发新功能时请遵循：
+- **异步存储**: 所有对 `MemoryStore`、`TaskTracker` 或 `Monitor` 的访问必须通过 `await`。
+- **服务注入**: 统一从 `src.core.dependencies` 获取单例，并确保在入口处调用过 `initialize_services()`。
+- **UI 线程**: 避免在 Gradio 事件处理函数中执行长时间的同步阻塞操作，优先使用 `asyncio`。
+
+## 5. 性能门禁与基准 (Performance Gate)
+
+系统集成严苛的性能检查 `perf_check.py`，防止启动性能退化：
+- `import_web_app_seconds`: 必须维持在较低水平。**严禁**在 `web_app.py` 的顶层导入 `gradio` 或 `playwright`，此类导入必须放在 `build_ui` 内部。
+- **CI 倍率**: 在 GitHub Actions 中会自动应用 5x 倍率以适配较慢的运行环境。
+
+## 6. 开发约定
 
 - 新增服务优先放在 `src/services/`，模型放在 `src/models/`。
 - 业务入口统一通过 `src/core/dependencies.py` 获取服务实例。
